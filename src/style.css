@@ -1,0 +1,93 @@
+:root {
+  font-family:
+    Inter, ui-rounded, "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+  color: #f8fbff;
+  background: #0b1f31;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  min-width: 320px;
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 20%, rgba(69, 145, 182, 0.28), transparent 42%),
+    linear-gradient(160deg, #102d44 0%, #071521 100%);
+}
+
+.app-shell {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  place-content: center;
+  gap: 14px;
+  padding: clamp(12px, 3vw, 32px);
+}
+
+.game-frame {
+  width: min(960px, calc(100vw - 24px));
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border: 3px solid rgba(255, 255, 255, 0.84);
+  border-radius: 22px;
+  background: #9bdcf4;
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.42),
+    0 0 0 8px rgba(255, 255, 255, 0.08);
+}
+
+#game,
+#game canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+#game canvas {
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.page-tip {
+  margin: 0;
+  color: rgba(232, 246, 255, 0.78);
+  font-size: clamp(12px, 1.6vw, 15px);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-align: center;
+}
+
+@media (max-aspect-ratio: 4 / 3) {
+  .app-shell {
+    align-content: center;
+  }
+}
+
+@media (max-height: 650px) {
+  .app-shell {
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .game-frame {
+    width: min(960px, calc((100dvh - 48px) * 16 / 9), calc(100vw - 16px));
+    border-radius: 14px;
+  }
+
+  .page-tip {
+    font-size: 11px;
+  }
+}

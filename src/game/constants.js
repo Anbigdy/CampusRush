@@ -1,0 +1,61 @@
+export const GAMEPLAY = Object.freeze({
+  width: 960,
+  height: 540,
+  groundY: 450,
+  playerX: 160,
+  playerWidth: 44,
+  playerHeight: 58,
+  gravityY: 1800,
+  jumpVelocity: -680,
+  initialSpeed: 300,
+  speedIncreasePerSecond: 5,
+  maxSpeed: 540,
+  scorePerSecond: 10,
+  initialSpawnDistance: 360,
+  obstacleGapMin: 500,
+  obstacleGapMax: 750,
+  obstacleDestroyX: -100,
+  farScrollFactor: 0.12,
+  campusScrollFactor: 0.35,
+  groundScrollFactor: 1,
+});
+
+export const COLORS = Object.freeze({
+  sky: 0x9bdcf4,
+  skyLight: 0xdaf5ff,
+  navy: 0x173b57,
+  navyDark: 0x0d273c,
+  cream: 0xfff4d6,
+  orange: 0xff9f43,
+  coral: 0xff6b5e,
+  mint: 0x65d6a6,
+  grass: 0x78be6f,
+  grassDark: 0x4d9856,
+  pavement: 0xd6d9d2,
+  pavementDark: 0xb9bdb6,
+  white: 0xffffff,
+});
+
+export const OBSTACLES = Object.freeze([
+  {
+    key: 'obstacle-backpack',
+    label: '书包',
+    width: 52,
+    height: 44,
+    body: { width: 44, height: 36, offsetX: 4, offsetY: 8 },
+  },
+  {
+    key: 'obstacle-barricade',
+    label: '路障',
+    width: 62,
+    height: 68,
+    body: { width: 56, height: 62, offsetX: 3, offsetY: 6 },
+  },
+  {
+    key: 'obstacle-puddle',
+    label: '水坑',
+    width: 82,
+    height: 18,
+    body: { width: 76, height: 10, offsetX: 3, offsetY: 8 },
+  },
+]);
