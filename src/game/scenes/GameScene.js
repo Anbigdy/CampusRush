@@ -136,6 +136,10 @@ export class GameScene extends Phaser.Scene {
       canSpawnRoute: () => this.isRouteSpawnSafe(),
       reserveObstacleGap: (distance) => this.reserveObstacleGap(distance),
       onLand: (x, y) => this.handlePlatformLanding(x, y),
+      spawnRouteHazard: (x, surfaceY, routeId, variant) =>
+        this.spawnRouteHazard(x, surfaceY, routeId, variant),
+      onRouteComplete: (points, pattern) =>
+        this.handleRouteComplete(points, pattern),
     });
   }
 
@@ -421,6 +425,36 @@ export class GameScene extends Phaser.Scene {
     this.distanceToNextObstacle = definition.width + safeGap;
   }
 
+  spawnRouteHazard(x, surfaceY, routeId, variant = 0) {
+    const candidates = this.obstacleDefinitions.filter(
+      (definition) =>
+        definition.action === 'jump' &&
+        definition.height <= 78,
+    );
+    if (!candidates.length) {
+      return null;
+    }
+
+    const definition = candidates[Math.abs(variant) % candidates.length];
+    const obstacle = this.obstacles.create(
+      x,
+      surfaceY - definition.height / 2,
+      definition.key,
+    );
+    obstacle.setDepth(8);
+    obstacle.setImmovable(true);
+    obstacle.body.allowGravity = false;
+    obstacle.body.setSize(definition.body.width, definition.body.height);
+    obstacle.body.setOffset(definition.body.offsetX, definition.body.offsetY);
+    obstacle.setVelocityX(-this.effectiveSpeed);
+    obstacle.setData('label', definition.label);
+    obstacle.setData('requiredAction', 'jump');
+    obstacle.setData('passed', false);
+    obstacle.setData('routeId', routeId);
+    obstacle.setData('routeHazard', true);
+    return obstacle;
+  }
+
   isPickupSpawnSafe() {
     if (this.platformRoutes?.blocksIndependentPickups()) {
       return false;
@@ -501,6 +535,44 @@ export class GameScene extends Phaser.Scene {
         onComplete: () => dust.destroy(),
       });
     });
+  }
+
+  handleRouteComplete(points, pattern) {
+    playSound(this, pattern.bundle ? 'bundle' : 'milestone');
+    const label = pattern.isLong ? `高空连跑 +${points}` : `路线完成 +${points}`;
+    this.addBonusScore(points, this.player.x + 34, this.player.y - 82, label);
+  }
+
+  enforcePlayerSafety() {
+    if (!this.player?.active || !this.player.body?.enable) {
+      return;
+    }
+
+    const feetY = this.player.body.bottom;
+    const invalidPosition =
+      !Number.isFinite(this.player.x) ||
+      !Number.isFinite(this.player.y) ||
+      !Number.isFinite(feetY);
+    const belowGround = Number.isFinite(feetY) && feetY > GAMEPLAY.groundY + 4;
+
+    if (invalidPosition || belowGround) {
+      this.platformRoutes?.forceReleaseSupport();
+      this.isFastFalling = false;
+      this.isCrouching = false;
+      applyNormalPlayerShape(this.player);
+      this.player.setPosition(GAMEPLAY.playerX, GAMEPLAY.groundY);
+      this.player.setVelocity(0, 0);
+      this.player.body.updateFromGameObject();
+      this.jumpCount = 0;
+      this.updatePlayerStatus();
+      return;
+    }
+
+    if (Math.abs(this.player.x - GAMEPLAY.playerX) > 2) {
+      this.player.setX(GAMEPLAY.playerX);
+      this.player.setVelocityX(0);
+      this.player.body.updateFromGameObject();
+    }
   }
 
   handleObstacleCollision(_player, obstacle) {
@@ -983,6 +1055,7 @@ export class GameScene extends Phaser.Scene {
       this.effectiveSpeed,
       this.score,
     );
+    this.enforcePlayerSafety();
 
     this.updateCrouchInput();
 

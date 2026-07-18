@@ -5,6 +5,7 @@ import {
   getSegmentSurfaceY,
   validatePlatformRoutePatterns,
 } from './platformRoutePatterns.js';
+import { generateProceduralRoute } from './proceduralRouteGenerator.js';
 
 const ROUTE_START_X = GAMEPLAY.width + 100;
 const FIRST_ROUTE_DISTANCE = 1180;
@@ -34,6 +35,8 @@ export class PlatformRouteManager {
     canSpawnRoute,
     reserveObstacleGap,
     onLand,
+    spawnRouteHazard,
+    onRouteComplete,
   }) {
     this.scene = scene;
     this.player = player;
@@ -41,14 +44,21 @@ export class PlatformRouteManager {
     this.canSpawnRoute = canSpawnRoute;
     this.reserveObstacleGap = reserveObstacleGap;
     this.onLand = onLand;
+    this.spawnRouteHazard = spawnRouteHazard;
+    this.onRouteComplete = onRouteComplete;
     this.routes = [];
     this.distanceUntilNextRoute = FIRST_ROUTE_DISTANCE;
     this.lastPatternId = null;
     this.routesSinceBundle = 0;
     this.routeSerial = 0;
+    this.routeSeedBase = `${scene.worldMode}-${Date.now()}-${Phaser.Math.Between(1000, 9999)}`;
+    this.recentSignatures = [];
+    this.performanceAdjustment = 0;
+    this.lastGeneration = null;
     this.supported = false;
     this.supportY = GAMEPLAY.groundY;
-    this.lastPlayerY = player.y;
+    this.supportContact = null;
+    this.lastPlayerFeetY = player.body?.bottom ?? player.y;
 
     const validationErrors = validatePlatformRoutePatterns();
     if (validationErrors.length) {
@@ -66,10 +76,14 @@ export class PlatformRouteManager {
     });
 
     this.updatePlayerSupport();
+    this.updateRouteProgress();
 
     const remainingRoutes = [];
     this.routes.forEach((route) => {
       if (route.x + route.pattern.width < ROUTE_DESTROY_X) {
+        if (this.supportContact?.routeId === route.id) {
+          this.forceReleaseSupport();
+        }
         route.container.destroy(true);
       } else {
         remainingRoutes.push(route);
@@ -83,23 +97,38 @@ export class PlatformRouteManager {
     }
 
     if (this.routes.length || score < 120) {
-      this.lastPlayerY = this.player.y;
+      this.lastPlayerFeetY = this.getPlayerFeetY();
       return;
     }
 
     this.distanceUntilNextRoute -= movement;
     if (this.distanceUntilNextRoute <= 0) {
       if (this.canSpawnRoute()) {
-        this.spawnRoute(this.selectPattern(score));
+        this.spawnRoute(this.selectPattern(score, safeSpeed));
       } else {
         this.distanceUntilNextRoute = safeSpeed * 0.9;
       }
     }
 
-    this.lastPlayerY = this.player.y;
+    this.lastPlayerFeetY = this.getPlayerFeetY();
   }
 
-  selectPattern(score) {
+  selectPattern(score, worldSpeed) {
+    const forceBundle = this.routesSinceBundle >= BUNDLE_PITY_LIMIT;
+    const generation = generateProceduralRoute({
+      seed: `${this.routeSeedBase}:${this.routeSerial + 1}:${Math.floor(score)}`,
+      score,
+      worldSpeed,
+      isIsekaiWorld: this.scene.isIsekaiWorld,
+      performanceAdjustment: this.performanceAdjustment,
+      forceBundle,
+      recentSignatures: this.recentSignatures,
+    });
+    this.lastGeneration = generation;
+    if (generation.pattern) {
+      return generation.pattern;
+    }
+
     let available = PLATFORM_ROUTE_PATTERNS.filter(
       (pattern) => pattern.unlockScore <= score && pattern.id !== this.lastPatternId,
     );
@@ -108,7 +137,7 @@ export class PlatformRouteManager {
     }
 
     const bundlePattern = available.find((pattern) => pattern.bundle);
-    if (bundlePattern && this.routesSinceBundle >= BUNDLE_PITY_LIMIT) {
+    if (bundlePattern && forceBundle) {
       return bundlePattern;
     }
     return pickWeighted(available);
@@ -124,10 +153,17 @@ export class PlatformRouteManager {
       x: ROUTE_START_X,
       pattern,
       container: this.createRouteVisual(pattern),
+      entered: false,
+      fell: false,
+      completionAwarded: false,
     };
     route.container.setX(route.x);
     this.routes.push(route);
     this.lastPatternId = pattern.id;
+    if (pattern.signature) {
+      this.recentSignatures.push(pattern.signature);
+      this.recentSignatures = this.recentSignatures.slice(-5);
+    }
     this.distanceUntilNextRoute = Number.POSITIVE_INFINITY;
 
     if (pattern.bundle) {
@@ -137,6 +173,7 @@ export class PlatformRouteManager {
     }
 
     this.spawnRewards(route);
+    this.spawnHazards(route);
     this.reserveObstacleGap(pattern.width + ROUTE_TRAILING_CLEARANCE);
     return true;
   }
@@ -199,6 +236,21 @@ export class PlatformRouteManager {
 
     container.add(graphics);
 
+    if (pattern.source === 'procedural' && pattern.isLong) {
+      const routeLabel = this.scene.add
+        .text(70, Math.min(...pattern.segments.map((segment) => Math.min(segment.y1, segment.y2))) - 58, '高空路线', {
+          fontFamily: 'Arial, "Microsoft YaHei", sans-serif',
+          fontSize: '13px',
+          fontStyle: 'bold',
+          color: '#fff7e3',
+          backgroundColor: isIsekai ? '#493877' : '#173c59',
+          padding: { x: 9, y: 5 },
+        })
+        .setOrigin(0.5)
+        .setDepth(10);
+      container.add(routeLabel);
+    }
+
     if (pattern.bundle) {
       const bundleSegment = pattern.segments[pattern.bundle.segment];
       const bundleY = getSegmentSurfaceY(bundleSegment, pattern.bundle.x);
@@ -230,10 +282,12 @@ export class PlatformRouteManager {
   spawnRewards(route) {
     route.pattern.coinRuns.forEach((run) => {
       const segment = route.pattern.segments[run.segment];
-      const usableWidth = segment.x2 - segment.x1 - run.inset * 2;
+      const startX = run.startX ?? segment.x1 + run.inset;
+      const endX = run.endX ?? segment.x2 - run.inset;
+      const usableWidth = endX - startX;
       for (let index = 0; index < run.count; index += 1) {
         const progress = run.count === 1 ? 0.5 : index / (run.count - 1);
-        const localX = segment.x1 + run.inset + usableWidth * progress;
+        const localX = startX + usableWidth * progress;
         const surfaceY = getSegmentSurfaceY(segment, localX);
         this.powerUps.spawnRouteCoin(
           route.x + localX,
@@ -255,16 +309,30 @@ export class PlatformRouteManager {
     }
   }
 
+  spawnHazards(route) {
+    route.pattern.hazards?.forEach((hazard) => {
+      const segment = route.pattern.segments[hazard.segment];
+      const surfaceY = getSegmentSurfaceY(segment, hazard.x);
+      this.spawnRouteHazard?.(
+        route.x + hazard.x,
+        surfaceY,
+        route.id,
+        hazard.variant,
+      );
+    });
+  }
+
   findSurfaceAtPlayer() {
     const playerX = this.player.x;
     const candidates = [];
     this.routes.forEach((route) => {
       const localX = playerX - route.x;
-      route.pattern.segments.forEach((segment) => {
+      route.pattern.segments.forEach((segment, segmentIndex) => {
         if (localX >= segment.x1 - 2 && localX <= segment.x2 + 2) {
           candidates.push({
             route,
             segment,
+            segmentIndex,
             y: getSegmentSurfaceY(segment, localX),
           });
         }
@@ -279,44 +347,90 @@ export class PlatformRouteManager {
 
   updatePlayerSupport() {
     const wasSupported = this.supported;
+    const previousContact = this.supportContact;
     this.supported = false;
+    this.supportContact = null;
     const candidate = this.findSurfaceAtPlayer();
     if (!candidate || !this.player?.active || !this.player.body?.enable) {
       return;
     }
 
     const surfaceY = candidate.y;
-    const currentY = this.player.y;
+    const currentFeetY = this.getPlayerFeetY();
     const velocityY = this.player.body.velocity.y;
     const groundContact =
       this.player.body.blocked.down || this.player.body.touching.down;
     const landedFromAbove =
       velocityY >= 0 &&
-      this.lastPlayerY <= surfaceY + LANDING_TOLERANCE &&
-      currentY >= surfaceY - LANDING_TOLERANCE;
+      this.lastPlayerFeetY <= surfaceY + LANDING_TOLERANCE &&
+      currentFeetY >= surfaceY - LANDING_TOLERANCE;
     const followsExistingSurface =
       wasSupported &&
+      previousContact?.routeId === candidate.route.id &&
       velocityY >= -1 &&
-      Math.abs(currentY - surfaceY) <= RAMP_STEP_TOLERANCE + 8;
+      Math.abs(currentFeetY - surfaceY) <= RAMP_STEP_TOLERANCE + 8;
     const entersRampFromGround =
       groundContact &&
       velocityY >= 0 &&
-      surfaceY <= currentY + 5 &&
-      currentY - surfaceY <= RAMP_STEP_TOLERANCE;
+      surfaceY <= currentFeetY + 5 &&
+      currentFeetY - surfaceY <= RAMP_STEP_TOLERANCE;
 
     if (!landedFromAbove && !followsExistingSurface && !entersRampFromGround) {
       return;
     }
 
-    this.player.setY(surfaceY);
+    this.player.setY(this.player.y + surfaceY - currentFeetY);
     this.player.setVelocityY(0);
     this.player.body.updateFromGameObject();
     this.supported = true;
     this.supportY = surfaceY;
+    this.supportContact = {
+      routeId: candidate.route.id,
+      segmentIndex: candidate.segmentIndex,
+    };
+    candidate.route.entered = true;
 
     if (!wasSupported) {
       this.onLand?.(this.player.x, surfaceY, candidate.route.pattern.label);
     }
+  }
+
+  getPlayerFeetY() {
+    return this.player?.body?.bottom ?? this.player?.y ?? GAMEPLAY.groundY;
+  }
+
+  updateRouteProgress() {
+    const groundContact =
+      this.player.body.blocked.down || this.player.body.touching.down;
+    this.routes.forEach((route) => {
+      if (!route.entered || route.fell || route.completionAwarded) {
+        return;
+      }
+      const localX = this.player.x - route.x;
+      if (localX >= route.pattern.width - 125) {
+        route.completionAwarded = true;
+        const points = route.pattern.isLong
+          ? Math.round(50 + route.pattern.difficulty * 50)
+          : Math.round(20 + (route.pattern.difficulty ?? 0.4) * 30);
+        this.performanceAdjustment = Phaser.Math.Clamp(
+          this.performanceAdjustment + 0.035,
+          -0.12,
+          0.12,
+        );
+        this.onRouteComplete?.(points, route.pattern);
+      } else if (
+        localX > 70 &&
+        groundContact &&
+        !this.supported
+      ) {
+        route.fell = true;
+        this.performanceAdjustment = Phaser.Math.Clamp(
+          this.performanceAdjustment - 0.045,
+          -0.12,
+          0.12,
+        );
+      }
+    });
   }
 
   isPlayerSupported() {
@@ -327,6 +441,13 @@ export class PlatformRouteManager {
     return this.supported ? this.supportY : GAMEPLAY.groundY;
   }
 
+  forceReleaseSupport() {
+    this.supported = false;
+    this.supportY = GAMEPLAY.groundY;
+    this.supportContact = null;
+    this.lastPlayerFeetY = this.getPlayerFeetY();
+  }
+
   blocksIndependentPickups() {
     return this.routes.length > 0;
   }
@@ -334,8 +455,7 @@ export class PlatformRouteManager {
   clearForTransition() {
     this.routes.forEach((route) => route.container.destroy(true));
     this.routes = [];
-    this.supported = false;
-    this.supportY = GAMEPLAY.groundY;
+    this.forceReleaseSupport();
     this.distanceUntilNextRoute = Number.POSITIVE_INFINITY;
   }
 
