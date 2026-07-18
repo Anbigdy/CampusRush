@@ -352,6 +352,9 @@ export class PlatformRouteManager {
     this.supportContact = null;
     const candidate = this.findSurfaceAtPlayer();
     if (!candidate || !this.player?.active || !this.player.body?.enable) {
+      if (wasSupported && this.player?.body) {
+        this.player.body.allowGravity = true;
+      }
       return;
     }
 
@@ -376,11 +379,18 @@ export class PlatformRouteManager {
       currentFeetY - surfaceY <= RAMP_STEP_TOLERANCE;
 
     if (!landedFromAbove && !followsExistingSurface && !entersRampFromGround) {
+      if (wasSupported) {
+        this.player.body.allowGravity = true;
+      }
       return;
     }
 
-    this.player.setY(this.player.y + surfaceY - currentFeetY);
+    // The sprite origin is at its feet. Pin the rendered feet directly to the
+    // surface and pause gravity while supported so Arcade Physics cannot pull
+    // the body down and force a visible correction on every frame.
+    this.player.setY(surfaceY);
     this.player.setVelocityY(0);
+    this.player.body.allowGravity = false;
     this.player.body.updateFromGameObject();
     this.supported = true;
     this.supportY = surfaceY;
@@ -445,6 +455,9 @@ export class PlatformRouteManager {
     this.supported = false;
     this.supportY = GAMEPLAY.groundY;
     this.supportContact = null;
+    if (this.player?.body) {
+      this.player.body.allowGravity = true;
+    }
     this.lastPlayerFeetY = this.getPlayerFeetY();
   }
 
