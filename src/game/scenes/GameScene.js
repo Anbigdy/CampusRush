@@ -1628,9 +1628,12 @@ export class GameScene extends Phaser.Scene {
         const reachesPlayer =
           obstacle.body.left < this.player.body.right &&
           obstacle.body.right > this.player.body.left;
+        const overlapsPlayerHeight =
+          obstacle.body.top < this.player.body.bottom &&
+          obstacle.body.bottom > this.player.body.top;
         const isLowObstacleDodge =
           this.isCrouching || this.isFastFalling;
-        if (reachesPlayer && !isLowObstacleDodge) {
+        if (reachesPlayer && overlapsPlayerHeight && !isLowObstacleDodge) {
           this.handleObstacleCollision(this.player, obstacle);
           return;
         }

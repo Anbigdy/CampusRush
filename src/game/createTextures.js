@@ -248,20 +248,20 @@ export function createGameTextures(scene) {
     graphics.fillCircle(30, 22, 3);
   });
 
-  saveTexture(scene, 'pickup-coin-bonus', 46, 46, (graphics) => {
+  saveTexture(scene, 'pickup-slowdown', 46, 46, (graphics) => {
     graphics.fillStyle(0xffffff, 0.92);
     graphics.fillCircle(23, 23, 22);
-    graphics.fillStyle(0xe9a72f, 1);
+    graphics.fillStyle(0x4bb6d6, 1);
     graphics.fillRoundedRect(5, 6, 36, 34, 9);
     graphics.fillStyle(COLORS.cream, 1);
-    graphics.fillRoundedRect(10, 11, 26, 24, 4);
-    graphics.fillStyle(COLORS.orange, 1);
-    graphics.fillCircle(23, 23, 7);
-    graphics.fillStyle(COLORS.cream, 1);
-    graphics.fillRoundedRect(21, 17, 4, 12, 2);
-    graphics.lineStyle(2, 0xd18a20, 1);
-    graphics.lineBetween(13, 15, 33, 15);
-    graphics.lineBetween(13, 31, 33, 31);
+    graphics.fillCircle(23, 23, 12);
+    graphics.lineStyle(3, COLORS.navy, 1);
+    graphics.lineBetween(23, 23, 23, 16);
+    graphics.lineBetween(23, 23, 17, 26);
+    graphics.lineStyle(3, 0x277f9d, 1);
+    graphics.arc(23, 23, 16, Math.PI * 0.18, Math.PI * 1.38, false);
+    graphics.fillStyle(0x277f9d, 1);
+    graphics.fillTriangle(8, 20, 14, 14, 15, 23);
   });
 
   saveTexture(scene, 'pickup-bundle', 58, 58, (graphics) => {

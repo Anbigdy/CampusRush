@@ -43,13 +43,13 @@ export const POWER_UPS = Object.freeze({
     duration: 10,
     color: 0x9b6bd1,
   }),
-  coinBonus: Object.freeze({
-    id: 'coinBonus',
-    texture: 'pickup-coin-bonus',
-    label: '奖学金券',
-    shortLabel: '金币×2',
+  slowdown: Object.freeze({
+    id: 'slowdown',
+    texture: 'pickup-slowdown',
+    label: '节奏稳定器',
+    shortLabel: '降速',
     duration: 10,
-    color: 0xe9a72f,
+    color: 0x4bb6d6,
   }),
 });
 
@@ -58,7 +58,7 @@ const POWER_UP_ORDER = Object.freeze([
   'rush',
   'magnet',
   'doubleScore',
-  'coinBonus',
+  'slowdown',
 ]);
 
 const FONT_FAMILY = 'Arial, "Microsoft YaHei", sans-serif';
@@ -388,8 +388,7 @@ export class PowerUpManager {
     const y = coin.y;
     coin.destroy();
     playSound(this.scene, 'coin');
-    const points =
-      COIN_VALUE * this.getScoreMultiplier() * this.getCoinMultiplier();
+    const points = COIN_VALUE * this.getScoreMultiplier();
     this.addScore(points, x, y, `+${points}`);
   }
 
@@ -413,7 +412,7 @@ export class PowerUpManager {
       'rush',
       'magnet',
       'doubleScore',
-      'coinBonus',
+      'slowdown',
     ]).slice(0, 2);
     const rewardIds = ['shield', ...bonusPool];
     rewardIds.forEach((id) => {
@@ -539,18 +538,25 @@ export class PowerUpManager {
   }
 
   getWorldSpeedMultiplier(worldSpeed = GAMEPLAY.initialSpeed) {
-    if (!this.isActive('rush')) {
+    if (this.isActive('rush')) {
+      return Math.min(1.4, GAMEPLAY.rushMaxSpeed / worldSpeed);
+    }
+
+    if (!this.isActive('slowdown')) {
       return 1;
     }
-    return Math.min(1.4, GAMEPLAY.rushMaxSpeed / worldSpeed);
+
+    const remaining = this.activeEffects.get('slowdown') ?? 0;
+    const recoveryProgress = Phaser.Math.Clamp(
+      1 - remaining / POWER_UPS.slowdown.duration,
+      0,
+      1,
+    );
+    return Phaser.Math.Linear(0.62, 1, recoveryProgress);
   }
 
   getScoreMultiplier() {
     return this.isActive('doubleScore') ? 2 : 1;
-  }
-
-  getCoinMultiplier() {
-    return this.isActive('coinBonus') ? 2 : 1;
   }
 
   isRushProtected() {
@@ -582,7 +588,12 @@ export class PowerUpManager {
     if (!state) {
       return;
     }
-    this.activeEffects = new Map(state.activeEffects ?? []);
+    this.activeEffects = new Map(
+      (state.activeEffects ?? []).map(([id, remaining]) => [
+        id === 'coinBonus' ? 'slowdown' : id,
+        remaining,
+      ]),
+    );
     this.rushGraceRemaining = Math.max(0, state.rushGraceRemaining ?? 0);
     this.skillSpawnRemaining = Math.max(0.8, state.skillSpawnRemaining ?? 7);
     this.coinSpawnRemaining = Math.max(0.5, state.coinSpawnRemaining ?? 2.4);

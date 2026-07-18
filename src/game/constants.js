@@ -223,6 +223,6 @@ export const NEON_OBSTACLES = Object.freeze([
     action: 'crouch',
     placement: 'air',
     y: 371,
-    body: { width: 88, height: 38, offsetX: 8, offsetY: 9 },
+    body: { width: 76, height: 30, offsetX: 14, offsetY: 15 },
   },
 ]);
