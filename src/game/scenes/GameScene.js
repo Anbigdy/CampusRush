@@ -1200,7 +1200,8 @@ export class GameScene extends Phaser.Scene {
         this.elapsedSeconds * GAMEPLAY.speedIncreasePerSecond,
     );
     this.effectiveSpeed =
-      this.currentSpeed * this.powerUps.getWorldSpeedMultiplier();
+      this.currentSpeed *
+      this.powerUps.getWorldSpeedMultiplier(this.currentSpeed);
     this.scoreAccumulator +=
       GAMEPLAY.scorePerSecond *
       safeDeltaSeconds *

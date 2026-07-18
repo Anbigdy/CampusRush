@@ -531,8 +531,11 @@ export class PowerUpManager {
     return (this.activeEffects.get(id) ?? 0) > 0;
   }
 
-  getWorldSpeedMultiplier() {
-    return this.isActive('rush') ? 1.4 : 1;
+  getWorldSpeedMultiplier(worldSpeed = GAMEPLAY.initialSpeed) {
+    if (!this.isActive('rush')) {
+      return 1;
+    }
+    return Math.min(1.4, GAMEPLAY.rushMaxSpeed / worldSpeed);
   }
 
   getScoreMultiplier() {

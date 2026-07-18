@@ -8,6 +8,7 @@ const speeds = [
   420,
   480,
   GAMEPLAY.maxSpeed,
+  GAMEPLAY.rushMaxSpeed,
 ];
 const casesPerSpeed = 60;
 const failures = [];
