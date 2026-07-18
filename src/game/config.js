@@ -4,6 +4,7 @@ import { BootScene } from './scenes/BootScene.js';
 import { MenuScene } from './scenes/MenuScene.js';
 import { GameScene } from './scenes/GameScene.js';
 import { IsekaiScene } from './scenes/IsekaiScene.js';
+import { NeonScene } from './scenes/NeonScene.js';
 
 const gameConfig = {
   type: Phaser.AUTO,
@@ -28,7 +29,7 @@ const gameConfig = {
       debug: false,
     },
   },
-  scene: [BootScene, MenuScene, GameScene, IsekaiScene],
+  scene: [BootScene, MenuScene, GameScene, IsekaiScene, NeonScene],
 };
 
 export default gameConfig;

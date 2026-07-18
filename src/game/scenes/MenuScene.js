@@ -217,9 +217,9 @@ export class MenuScene extends Phaser.Scene {
       .setDepth(12);
 
     this.add
-      .text(480, 360, '达到 1000 分，开启异世界主线', {
+      .text(480, 360, '1000 分进入异世界 · 5000 分穿门抵达未来城', {
         fontFamily: FONT_FAMILY,
-        fontSize: '13px',
+        fontSize: '12px',
         fontStyle: 'bold',
         color: '#7a5aa8',
       })

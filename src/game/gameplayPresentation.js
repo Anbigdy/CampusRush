@@ -20,7 +20,11 @@ function destroyObjects(objects) {
 
 export function decorateObstacle(scene, obstacle, definition, surfaceY) {
   const style = ACTION_STYLES[definition.action] ?? ACTION_STYLES.jump;
-  const dangerColor = scene.isIsekaiWorld ? 0xff5f9f : 0xff584d;
+  const dangerColor = scene.isNeonWorld
+    ? 0xffc857
+    : scene.isIsekaiWorld
+      ? 0xff5f9f
+      : 0xff584d;
   const outline = scene.add
     .image(obstacle.x, obstacle.y, definition.key)
     .setDepth(obstacle.depth - 0.04)

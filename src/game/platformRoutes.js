@@ -119,7 +119,7 @@ export class PlatformRouteManager {
       seed: `${this.routeSeedBase}:${this.routeSerial + 1}:${Math.floor(score)}`,
       score,
       worldSpeed,
-      isIsekaiWorld: this.scene.isIsekaiWorld,
+      isIsekaiWorld: this.scene.isIsekaiWorld || this.scene.isNeonWorld,
       performanceAdjustment: this.performanceAdjustment,
       forceBundle,
       recentSignatures: this.recentSignatures,
@@ -182,10 +182,11 @@ export class PlatformRouteManager {
     const container = this.scene.add.container(0, 0).setDepth(7);
     const graphics = this.scene.make.graphics({ x: 0, y: 0, add: false });
     const isIsekai = this.scene.isIsekaiWorld;
-    const fillColor = isIsekai ? 0x4b4567 : 0x4f7892;
-    const undersideColor = isIsekai ? 0x302b4a : 0x31566f;
-    const edgeColor = isIsekai ? 0x8fffe0 : COLORS.cream;
-    const accentColor = isIsekai ? 0xb9a5ff : COLORS.orange;
+    const isNeon = this.scene.isNeonWorld;
+    const fillColor = isNeon ? 0x17384f : isIsekai ? 0x4b4567 : 0x4f7892;
+    const undersideColor = isNeon ? 0x071323 : isIsekai ? 0x302b4a : 0x31566f;
+    const edgeColor = isNeon ? 0x35f2df : isIsekai ? 0x8fffe0 : COLORS.cream;
+    const accentColor = isNeon ? 0xff4fa3 : isIsekai ? 0xb9a5ff : COLORS.orange;
 
     pattern.segments.forEach((segment, index) => {
       graphics.fillStyle(undersideColor, 0.98);
@@ -211,7 +212,7 @@ export class PlatformRouteManager {
         const progress = marker / (markerCount + 1);
         const markerX = Phaser.Math.Linear(segment.x1, segment.x2, progress);
         const markerY = Phaser.Math.Linear(segment.y1, segment.y2, progress);
-        if (isIsekai) {
+        if (isIsekai || isNeon) {
           graphics.fillStyle(marker % 2 ? accentColor : edgeColor, 0.72);
           graphics.fillCircle(markerX, markerY + 14, 3);
         } else {
@@ -243,7 +244,7 @@ export class PlatformRouteManager {
           fontSize: '13px',
           fontStyle: 'bold',
           color: '#fff7e3',
-          backgroundColor: isIsekai ? '#493877' : '#173c59',
+          backgroundColor: isNeon ? '#071323' : isIsekai ? '#493877' : '#173c59',
           padding: { x: 9, y: 5 },
         })
         .setOrigin(0.5)
@@ -260,7 +261,7 @@ export class PlatformRouteManager {
           fontSize: '15px',
           fontStyle: 'bold',
           color: '#fff7e3',
-          stroke: isIsekai ? '#30234f' : '#173c59',
+          stroke: isNeon ? '#071323' : isIsekai ? '#30234f' : '#173c59',
           strokeThickness: 5,
         })
         .setOrigin(0.5)

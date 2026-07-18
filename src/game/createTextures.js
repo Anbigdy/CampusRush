@@ -862,4 +862,166 @@ export function createGameTextures(scene) {
     graphics.lineBetween(80, 67, 102, 67);
     graphics.lineBetween(91, 56, 91, 78);
   });
+
+  saveTexture(scene, 'neon-ground', 240, 90, (graphics) => {
+    graphics.fillStyle(0x071323, 1);
+    graphics.fillRect(0, 0, 240, 90);
+    graphics.fillStyle(0x142e45, 1);
+    graphics.fillRect(0, 0, 240, 15);
+    graphics.fillStyle(0x35f2df, 1);
+    graphics.fillRect(0, 0, 240, 4);
+    graphics.fillStyle(0x1f4961, 1);
+    for (let x = 8; x < 240; x += 48) {
+      graphics.fillRoundedRect(x, 21, 34, 8, 2);
+      graphics.fillStyle(x % 96 ? 0xff4fa3 : 0xffc857, 0.9);
+      graphics.fillRect(x + 5, 23, 7, 3);
+      graphics.fillStyle(0x1f4961, 1);
+    }
+    graphics.lineStyle(2, 0x21445c, 0.9);
+    graphics.lineBetween(0, 54, 240, 54);
+    graphics.lineBetween(58, 15, 42, 90);
+    graphics.lineBetween(167, 15, 183, 90);
+    graphics.lineStyle(2, 0xff4fa3, 0.42);
+    graphics.lineBetween(0, 82, 240, 82);
+  });
+
+  saveTexture(scene, 'neon-reactor', 96, 158, (graphics) => {
+    graphics.fillStyle(0x050a18, 0.42);
+    graphics.fillEllipse(48, 153, 90, 10);
+    graphics.fillStyle(0x111f36, 1);
+    graphics.fillRoundedRect(10, 22, 76, 132, 8);
+    graphics.fillStyle(0x27465c, 1);
+    graphics.fillRoundedRect(17, 30, 62, 116, 5);
+    graphics.fillStyle(0x081827, 1);
+    graphics.fillRoundedRect(27, 47, 42, 74, 8);
+    graphics.fillStyle(0x6836c7, 0.9);
+    graphics.fillCircle(48, 84, 22);
+    graphics.fillStyle(0x37f4df, 0.96);
+    graphics.fillCircle(48, 84, 14);
+    graphics.fillStyle(0xe6fffb, 0.95);
+    graphics.fillCircle(43, 78, 5);
+    graphics.lineStyle(4, 0xff4fa3, 0.86);
+    graphics.strokeRoundedRect(21, 39, 54, 92, 8);
+    graphics.lineStyle(3, 0x35f2df, 0.95);
+    graphics.lineBetween(17, 35, 79, 35);
+    graphics.lineBetween(17, 139, 79, 139);
+    [20, 76].forEach((x) => {
+      graphics.fillStyle(0xffc857, 1);
+      graphics.fillRect(x - 3, 8, 6, 20);
+      graphics.fillTriangle(x - 7, 10, x + 7, 10, x, 0);
+    });
+  });
+
+  saveTexture(scene, 'neon-energy-orb', 64, 44, (graphics) => {
+    graphics.lineStyle(3, 0xff4fa3, 0.58);
+    graphics.strokeEllipse(32, 22, 61, 25);
+    graphics.fillStyle(0x6f39d8, 0.48);
+    graphics.fillCircle(32, 22, 19);
+    graphics.fillStyle(0x35f2df, 0.96);
+    graphics.fillCircle(32, 22, 12);
+    graphics.fillStyle(0xe7fffb, 1);
+    graphics.fillRect(28, 13, 7, 7);
+    graphics.fillStyle(0xffc857, 1);
+    graphics.fillRect(6, 29, 4, 4);
+    graphics.fillRect(53, 7, 4, 4);
+  });
+
+  saveTexture(scene, 'neon-gate', 210, 284, (graphics) => {
+    graphics.fillStyle(0x050817, 0.36);
+    graphics.fillRoundedRect(7, 5, 196, 274, 18);
+    graphics.fillStyle(0x14223d, 1);
+    graphics.fillRoundedRect(19, 8, 172, 276, 15);
+    graphics.fillStyle(0x213c59, 1);
+    graphics.fillRoundedRect(30, 20, 150, 264, 12);
+    graphics.fillStyle(0x061425, 1);
+    graphics.fillRoundedRect(48, 44, 114, 240, 56);
+    graphics.lineStyle(8, 0xff4fa3, 0.9);
+    graphics.strokeRoundedRect(39, 31, 132, 253, 18);
+    graphics.lineStyle(5, 0x35f2df, 1);
+    graphics.strokeRoundedRect(50, 47, 110, 237, 52);
+    graphics.lineStyle(2, 0xe8fffb, 0.74);
+    graphics.strokeRoundedRect(60, 61, 90, 223, 44);
+    for (let y = 67; y < 272; y += 26) {
+      graphics.fillStyle(y % 52 === 15 ? 0xffc857 : 0x35f2df, 0.76);
+      graphics.fillRect(19, y, 13, 5);
+      graphics.fillRect(178, y + 9, 13, 5);
+    }
+    graphics.fillStyle(0xff4fa3, 0.9);
+    graphics.fillTriangle(86, 20, 105, 3, 124, 20);
+    graphics.fillStyle(0xe9fffb, 0.9);
+    graphics.fillCircle(105, 18, 5);
+  });
+
+  saveTexture(scene, 'neon-pickup-coin', 30, 30, (graphics) => {
+    graphics.fillStyle(0x102238, 0.36);
+    graphics.fillCircle(15, 17, 13);
+    graphics.fillStyle(0x35f2df, 1);
+    graphics.fillRoundedRect(3, 3, 24, 24, 7);
+    graphics.lineStyle(2, 0xe7fffb, 0.9);
+    graphics.strokeRoundedRect(6, 6, 18, 18, 4);
+    graphics.fillStyle(0xff4fa3, 1);
+    graphics.fillRect(12, 8, 6, 14);
+    graphics.fillStyle(0xffffff, 0.94);
+    graphics.fillRect(13, 8, 2, 5);
+  });
+
+  const drawNeonPickup = (key, color, symbolDrawer) => {
+    saveTexture(scene, key, 46, 46, (graphics) => {
+      graphics.fillStyle(0x071323, 0.96);
+      graphics.fillRoundedRect(3, 3, 40, 40, 9);
+      graphics.lineStyle(3, color, 1);
+      graphics.strokeRoundedRect(4, 4, 38, 38, 8);
+      graphics.fillStyle(color, 0.22);
+      graphics.fillCircle(23, 23, 15);
+      symbolDrawer(graphics);
+      graphics.fillStyle(0xffffff, 0.82);
+      graphics.fillRect(10, 9, 6, 2);
+    });
+  };
+
+  drawNeonPickup('neon-pickup-shield', 0x35f2df, (graphics) => {
+    graphics.fillStyle(0xdffffa, 1);
+    graphics.fillTriangle(23, 10, 12, 16, 23, 36);
+    graphics.fillTriangle(23, 10, 34, 16, 23, 36);
+    graphics.fillStyle(0x35f2df, 1);
+    graphics.fillCircle(23, 22, 4);
+  });
+  drawNeonPickup('neon-pickup-rush', 0xff4fa3, (graphics) => {
+    graphics.fillStyle(0xfff1f8, 1);
+    graphics.fillTriangle(25, 8, 13, 25, 23, 25);
+    graphics.fillTriangle(21, 38, 34, 19, 23, 19);
+  });
+  drawNeonPickup('neon-pickup-magnet', 0x8c6dff, (graphics) => {
+    graphics.lineStyle(7, 0xf3eeff, 1);
+    graphics.arc(23, 22, 11, 0, Math.PI);
+    graphics.fillStyle(0xff4fa3, 1);
+    graphics.fillRect(9, 21, 7, 10);
+    graphics.fillStyle(0x35f2df, 1);
+    graphics.fillRect(30, 21, 7, 10);
+  });
+  drawNeonPickup('neon-pickup-double-score', 0xffc857, (graphics) => {
+    graphics.fillStyle(0xfff5d4, 1);
+    graphics.fillRoundedRect(10, 14, 11, 18, 3);
+    graphics.fillRoundedRect(25, 14, 11, 18, 3);
+    graphics.fillStyle(0x17243a, 1);
+    graphics.fillRect(14, 20, 3, 7);
+    graphics.fillRect(29, 20, 3, 7);
+  });
+  drawNeonPickup('neon-pickup-coin-bonus', 0x35f2df, (graphics) => {
+    graphics.fillStyle(0xffc857, 1);
+    graphics.fillCircle(19, 23, 9);
+    graphics.fillCircle(28, 23, 9);
+    graphics.fillStyle(0x071323, 1);
+    graphics.fillRect(17, 17, 3, 12);
+    graphics.fillRect(27, 17, 3, 12);
+  });
+  drawNeonPickup('neon-pickup-bundle', 0xff4fa3, (graphics) => {
+    graphics.fillStyle(0x35f2df, 1);
+    graphics.fillRoundedRect(9, 15, 28, 21, 4);
+    graphics.fillStyle(0xffc857, 1);
+    graphics.fillRect(20, 15, 6, 21);
+    graphics.fillRect(9, 21, 28, 5);
+    graphics.fillStyle(0xffffff, 1);
+    graphics.fillCircle(23, 12, 5);
+  });
 }

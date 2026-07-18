@@ -64,9 +64,31 @@ const POWER_UP_ORDER = Object.freeze([
 const FONT_FAMILY = 'Arial, "Microsoft YaHei", sans-serif';
 const COIN_VALUE = 10;
 const MAGNET_RADIUS = 220;
+const NEON_PICKUP_TEXTURES = Object.freeze({
+  shield: 'neon-pickup-shield',
+  rush: 'neon-pickup-rush',
+  magnet: 'neon-pickup-magnet',
+  doubleScore: 'neon-pickup-double-score',
+  coinBonus: 'neon-pickup-coin-bonus',
+  coin: 'neon-pickup-coin',
+  bundle: 'neon-pickup-bundle',
+});
+const NEON_PICKUP_LABELS = Object.freeze({
+  shield: '六边形护盾核心',
+  rush: '时序超频核心',
+  magnet: '重力线圈',
+  doubleScore: '双倍数据芯片',
+  coinBonus: '信用增幅器',
+});
 
 export class PowerUpManager {
-  constructor(scene, { player, addScore, isSpawnSafe, reserveObstacleGap }) {
+  constructor(scene, {
+    player,
+    addScore,
+    isSpawnSafe,
+    reserveObstacleGap,
+    initialState,
+  }) {
     this.scene = scene;
     this.player = player;
     this.addScore = addScore;
@@ -100,6 +122,22 @@ export class PowerUpManager {
 
     this.createHud();
     this.createPlayerEffects();
+    this.restoreState(initialState);
+  }
+
+  getTexture(id) {
+    if (this.scene.isNeonWorld) {
+      return NEON_PICKUP_TEXTURES[id];
+    }
+    return id === 'coin' || id === 'bundle'
+      ? `pickup-${id}`
+      : POWER_UPS[id].texture;
+  }
+
+  getLabel(id) {
+    return this.scene.isNeonWorld
+      ? NEON_PICKUP_LABELS[id] ?? POWER_UPS[id]?.label
+      : POWER_UPS[id]?.label;
   }
 
   createHud() {
@@ -276,7 +314,7 @@ export class PowerUpManager {
     const pickup = this.skillPickups.create(
       GAMEPLAY.width + 36,
       GAMEPLAY.groundY - 43,
-      definition.texture,
+      this.getTexture(id),
     );
     pickup.setDepth(9);
     pickup.setData('powerUpId', id);
@@ -310,7 +348,7 @@ export class PowerUpManager {
   }
 
   createCoin(x, y) {
-    const coin = this.coins.create(x, y, 'pickup-coin');
+    const coin = this.coins.create(x, y, this.getTexture('coin'));
     coin.setDepth(9);
     coin.body.setCircle(13, 2, 2);
     decoratePickup(this.scene, coin, { color: 0xffc83d, kind: 'coin' });
@@ -333,7 +371,7 @@ export class PowerUpManager {
   }
 
   spawnRewardBundle(x, y, routeId) {
-    const pickup = this.skillPickups.create(x, y, 'pickup-bundle');
+    const pickup = this.skillPickups.create(x, y, this.getTexture('bundle'));
     pickup.setDepth(10);
     pickup.setData('rewardBundle', true);
     pickup.setData('routeId', routeId);
@@ -396,7 +434,7 @@ export class PowerUpManager {
     if (id === 'rush') {
       this.rushGraceRemaining = 0;
     }
-    this.showToast(`获得：${definition.label}`);
+    this.showToast(`获得：${this.getLabel(id)}`);
     this.updateHud();
     this.updatePlayerEffects();
   }
@@ -562,6 +600,27 @@ export class PowerUpManager {
     return true;
   }
 
+  getTransitionState() {
+    return {
+      activeEffects: [...this.activeEffects.entries()],
+      rushGraceRemaining: this.rushGraceRemaining,
+      skillSpawnRemaining: this.skillSpawnRemaining,
+      coinSpawnRemaining: this.coinSpawnRemaining,
+    };
+  }
+
+  restoreState(state) {
+    if (!state) {
+      return;
+    }
+    this.activeEffects = new Map(state.activeEffects ?? []);
+    this.rushGraceRemaining = Math.max(0, state.rushGraceRemaining ?? 0);
+    this.skillSpawnRemaining = Math.max(0.8, state.skillSpawnRemaining ?? 7);
+    this.coinSpawnRemaining = Math.max(0.5, state.coinSpawnRemaining ?? 2.4);
+    this.updateHud();
+    this.updatePlayerEffects();
+  }
+
   stop() {
     this.activeEffects.clear();
     this.rushGraceRemaining = 0;
@@ -570,8 +629,10 @@ export class PowerUpManager {
     this.updatePlayerEffects();
   }
 
-  clearForTransition() {
-    this.stop();
+  clearForTransition({ preserveEffects = false } = {}) {
+    if (!preserveEffects) {
+      this.stop();
+    }
     [this.skillPickups, this.coins].forEach((group) => {
       group.getChildren().forEach((pickup) => {
         this.scene.tweens.killTweensOf(pickup);

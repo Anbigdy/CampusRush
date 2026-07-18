@@ -53,6 +53,43 @@ export function createIsekaiBackdrop(scene) {
   return { sky, sunGlow: moonGlow, sun: moon, far, campus, ground, wisps };
 }
 
+export function createNeonBackdrop(scene) {
+  const sky = scene.add
+    .tileSprite(480, 225, GAMEPLAY.width, 450, 'neon-bg-skyline')
+    .setTileScale(2.02)
+    .setDepth(0);
+  const far = scene.add
+    .tileSprite(480, 225, GAMEPLAY.width, 450, 'neon-bg-mid')
+    .setTileScale(2.02)
+    .setDepth(1);
+  const city = scene.add
+    .tileSprite(480, 225, GAMEPLAY.width, 450, 'neon-bg-near')
+    .setTileScale(2.02)
+    .setDepth(2);
+  const ground = scene.add
+    .tileSprite(480, 495, GAMEPLAY.width, 90, 'neon-ground')
+    .setDepth(5);
+
+  const horizonGlow = scene.add
+    .rectangle(480, 392, GAMEPLAY.width, 46, 0xff3f9a, 0.09)
+    .setDepth(3);
+  const rain = Array.from({ length: 22 }, (_, index) =>
+    scene.add
+      .rectangle(
+        (index * 47 + 19) % GAMEPLAY.width,
+        118 + ((index * 83) % 340),
+        2,
+        13 + (index % 4) * 5,
+        index % 5 === 0 ? 0xff5bae : 0x75f9ec,
+        0.16 + (index % 3) * 0.06,
+      )
+      .setAngle(16)
+      .setDepth(4),
+  );
+
+  return { sky, far, city, ground, horizonGlow, rain };
+}
+
 export function scrollCampusBackdrop(backdrop, speed, deltaSeconds) {
   backdrop.far.tilePositionX += speed * GAMEPLAY.farScrollFactor * deltaSeconds;
   backdrop.campus.tilePositionX +=
@@ -68,6 +105,21 @@ export function scrollIsekaiBackdrop(backdrop, speed, deltaSeconds) {
     wisp.y += Math.sin(wisp.x * 0.018 + index) * 4 * deltaSeconds;
     if (wisp.x < -12) {
       wisp.x = GAMEPLAY.width + 12;
+    }
+  });
+}
+
+export function scrollNeonBackdrop(backdrop, speed, deltaSeconds) {
+  backdrop.sky.tilePositionX += speed * 0.045 * deltaSeconds;
+  backdrop.far.tilePositionX += speed * 0.14 * deltaSeconds;
+  backdrop.city.tilePositionX += speed * 0.48 * deltaSeconds;
+  backdrop.ground.tilePositionX += speed * GAMEPLAY.groundScrollFactor * deltaSeconds;
+  backdrop.rain.forEach((drop, index) => {
+    drop.x -= speed * (0.16 + (index % 4) * 0.025) * deltaSeconds;
+    drop.y += (155 + (index % 5) * 34) * deltaSeconds;
+    if (drop.x < -12 || drop.y > GAMEPLAY.groundY + 20) {
+      drop.x = GAMEPLAY.width + (index % 5) * 22;
+      drop.y = 92 - (index % 4) * 36;
     }
   });
 }

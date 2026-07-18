@@ -5,6 +5,10 @@ import {
 } from '../../loadingScreen.js';
 import { loadBackgroundMusic } from '../backgroundMusic.js';
 import { createGameTextures } from '../createTextures.js';
+import {
+  loadNeonWorldAssets,
+  prepareNeonWorldAssets,
+} from '../assets/neonWorldAssets.js';
 import { loadPlayerSkin, preparePlayerSkin } from '../playerSkin.js';
 import {
   SNOW_PEAK,
@@ -36,6 +40,9 @@ function getFileStatus(file) {
   }
   if (file.key === SNOW_PEAK.textureKey) {
     return '正在寻找 Snow Peak…';
+  }
+  if (file.key.startsWith('neon-')) {
+    return '正在接通未来城…';
   }
   return '正在叫醒主角…';
 }
@@ -74,6 +81,7 @@ export class BootScene extends Phaser.Scene {
     loadPlayerSkin(this);
     loadBackgroundMusic(this);
     loadSnowPeak(this);
+    loadNeonWorldAssets(this);
   }
 
   create() {
@@ -81,6 +89,7 @@ export class BootScene extends Phaser.Scene {
     createGameTextures(this);
     preparePlayerSkin(this);
     prepareSnowPeak(this);
+    prepareNeonWorldAssets(this);
     this.scene.start('MenuScene');
     finishLoadingScreen();
   }

@@ -4,13 +4,16 @@ import {
   COLORS,
   GAMEPLAY,
   ISEKAI_OBSTACLES,
+  NEON_OBSTACLES,
   OBSTACLES,
 } from '../constants.js';
 import {
   createCampusBackdrop,
   createIsekaiBackdrop,
+  createNeonBackdrop,
   scrollCampusBackdrop,
   scrollIsekaiBackdrop,
+  scrollNeonBackdrop,
 } from '../sceneVisuals.js';
 import {
   PLAYER_SKIN,
@@ -41,7 +44,9 @@ export class GameScene extends Phaser.Scene {
   constructor(sceneKey = 'GameScene', worldMode = 'campus') {
     super(sceneKey);
     this.worldMode = worldMode;
+    this.isCampusWorld = worldMode === 'campus';
     this.isIsekaiWorld = worldMode === 'isekai';
+    this.isNeonWorld = worldMode === 'neon';
   }
 
   init(data = {}) {
@@ -67,19 +72,30 @@ export class GameScene extends Phaser.Scene {
     this.jumpCount = 0;
     this.lastObstacleKey = null;
     this.lastScoreMilestone = Math.floor(this.score / 100);
-    this.storyTriggered = this.isIsekaiWorld;
-    this.extraLives = 0;
-    this.extraLifeGraceRemaining = 0;
+    this.storyTriggered = !this.isCampusWorld;
+    this.neonTransitionTriggered = this.isNeonWorld;
+    this.extraLives = Math.max(0, data.extraLives ?? 0);
+    this.extraLifeGraceRemaining = Math.max(
+      0,
+      data.extraLifeGraceRemaining ?? 0,
+    );
+    this.powerUpState = data.powerUpState ?? null;
+    this.playerStartX = data.playerStartX ?? GAMEPLAY.playerX;
+    this.arrivalFromPortal = Boolean(data.arrivalFromPortal);
     this.snowPeakEvent = null;
-    this.obstacleDefinitions = this.isIsekaiWorld
-      ? ISEKAI_OBSTACLES
-      : OBSTACLES;
+    this.obstacleDefinitions = this.isNeonWorld
+      ? NEON_OBSTACLES
+      : this.isIsekaiWorld
+        ? ISEKAI_OBSTACLES
+        : OBSTACLES;
   }
 
   create() {
-    this.backdrop = this.isIsekaiWorld
-      ? createIsekaiBackdrop(this)
-      : createCampusBackdrop(this);
+    this.backdrop = this.isNeonWorld
+      ? createNeonBackdrop(this)
+      : this.isIsekaiWorld
+        ? createIsekaiBackdrop(this)
+        : createCampusBackdrop(this);
     this.createGround();
     this.createPlayer();
     this.createObstacles();
@@ -92,6 +108,8 @@ export class GameScene extends Phaser.Scene {
 
     if (this.isIsekaiWorld) {
       this.showIsekaiArrival();
+    } else if (this.isNeonWorld && this.arrivalFromPortal) {
+      this.showNeonArrival();
     }
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.shutdown, this);
@@ -104,10 +122,10 @@ export class GameScene extends Phaser.Scene {
 
   createPlayer() {
     this.playerShadow = this.add
-      .ellipse(GAMEPLAY.playerX, GAMEPLAY.groundY - 3, 56, 12, COLORS.navyDark, 0.2)
+      .ellipse(this.playerStartX, GAMEPLAY.groundY - 3, 56, 12, COLORS.navyDark, 0.2)
       .setDepth(6);
     this.player = this.physics.add.sprite(
-      GAMEPLAY.playerX,
+      this.playerStartX,
       GAMEPLAY.groundY,
       PLAYER_SKIN.textureKey,
       PLAYER_SKIN.runFrames.start,
@@ -141,6 +159,7 @@ export class GameScene extends Phaser.Scene {
         this.addBonusScore(points, x, y, label),
       isSpawnSafe: () => this.isPickupSpawnSafe(),
       reserveObstacleGap: (distance) => this.reserveObstacleGap(distance),
+      initialState: this.powerUpState,
     });
   }
 
@@ -219,6 +238,21 @@ export class GameScene extends Phaser.Scene {
   }
 
   createHud() {
+    const chapterFill = this.isNeonWorld
+      ? 0x071323
+      : this.isIsekaiWorld
+        ? 0x493877
+        : COLORS.navy;
+    const chapterStroke = this.isNeonWorld
+      ? 0x35f2df
+      : this.isIsekaiWorld
+        ? 0xb9a5ff
+        : COLORS.white;
+    const chapterLabel = this.isNeonWorld
+      ? 'CHAPTER III · 霓虹终点线'
+      : this.isIsekaiWorld
+        ? 'CHAPTER II · 异世界'
+        : '主线目标 · 1000 分';
     this.add
       .rectangle(25, 23, 304, 104, COLORS.navyDark, 0.22)
       .setOrigin(0)
@@ -239,7 +273,7 @@ export class GameScene extends Phaser.Scene {
       })
       .setDepth(21);
     this.scoreText = this.add
-      .text(39, 48, '0', {
+      .text(39, 48, String(this.score), {
         fontFamily: FONT_FAMILY,
         fontSize: '34px',
         fontStyle: 'bold',
@@ -314,15 +348,15 @@ export class GameScene extends Phaser.Scene {
       .setOrigin(1, 0.5)
       .setDepth(21);
     this.add
-      .rectangle(938, 121, 190, 28, this.isIsekaiWorld ? 0x493877 : COLORS.navy, 0.94)
+      .rectangle(938, 121, 214, 28, chapterFill, 0.94)
       .setOrigin(1, 0.5)
-      .setStrokeStyle(2, this.isIsekaiWorld ? 0xb9a5ff : COLORS.white, 0.78)
+      .setStrokeStyle(2, chapterStroke, 0.78)
       .setDepth(20);
     this.add
       .text(
         925,
         121,
-        this.isIsekaiWorld ? 'CHAPTER II · 异世界' : '主线目标 · 1000 分',
+        chapterLabel,
         {
           fontFamily: FONT_FAMILY,
           fontSize: '12px',
@@ -516,6 +550,7 @@ export class GameScene extends Phaser.Scene {
     const obstacle = this.obstacles.create(x, y, definition.key);
 
     obstacle.setDepth(7);
+    obstacle.setDisplaySize(definition.width, definition.height);
     obstacle.setImmovable(true);
     obstacle.body.allowGravity = false;
     obstacle.body.setSize(definition.body.width, definition.body.height);
@@ -550,6 +585,7 @@ export class GameScene extends Phaser.Scene {
       definition.key,
     );
     obstacle.setDepth(8);
+    obstacle.setDisplaySize(definition.width, definition.height);
     obstacle.setImmovable(true);
     obstacle.body.allowGravity = false;
     obstacle.body.setSize(definition.body.width, definition.body.height);
@@ -583,9 +619,14 @@ export class GameScene extends Phaser.Scene {
   }
 
   isRouteSpawnSafe() {
+    const transitionApproaching =
+      (this.isCampusWorld &&
+        this.score >= GAMEPLAY.storyTransitionScore - 140) ||
+      (this.isIsekaiWorld &&
+        this.score >= GAMEPLAY.neonTransitionScore - 180);
     if (
       this.runState !== 'playing' ||
-      (!this.isIsekaiWorld && this.score >= GAMEPLAY.storyTransitionScore - 140) ||
+      transitionApproaching ||
       !this.powerUps?.isPickupEntryClear()
     ) {
       return false;
@@ -628,7 +669,11 @@ export class GameScene extends Phaser.Scene {
 
   handlePlatformLanding(x, y) {
     playSound(this, 'platformLand');
-    const dustColor = this.isIsekaiWorld ? 0xb9a5ff : 0xfff7e3;
+    const dustColor = this.isNeonWorld
+      ? 0x35f2df
+      : this.isIsekaiWorld
+        ? 0xb9a5ff
+        : 0xfff7e3;
     [-16, 0, 16].forEach((offset, index) => {
       const dust = this.add
         .circle(x + offset, y - 3, 4 + index, dustColor, 0.66)
@@ -741,7 +786,7 @@ export class GameScene extends Phaser.Scene {
 
   beginStoryTransition() {
     if (
-      this.isIsekaiWorld ||
+      !this.isCampusWorld ||
       this.storyTriggered ||
       this.runState !== 'playing'
     ) {
@@ -925,6 +970,301 @@ export class GameScene extends Phaser.Scene {
         });
       });
       this.cameras.main.fadeOut(760, 246, 240, 255);
+    });
+  }
+
+  beginNeonTransition() {
+    if (
+      !this.isIsekaiWorld ||
+      this.neonTransitionTriggered ||
+      this.runState !== 'playing'
+    ) {
+      return;
+    }
+
+    this.neonTransitionTriggered = true;
+    this.runState = 'neonTransition';
+    this.setMobileControlsVisible(false);
+    this.pendingNeonState = {
+      elapsedSeconds: this.elapsedSeconds,
+      scoreAccumulator: this.scoreAccumulator,
+      currentSpeed: this.currentSpeed,
+      highScore: this.highScore,
+      extraLives: this.extraLives,
+      extraLifeGraceRemaining: this.extraLifeGraceRemaining,
+      powerUpState: this.powerUps.getTransitionState(),
+    };
+
+    this.platformRoutes.clearForTransition();
+    this.powerUps.clearForTransition({ preserveEffects: true });
+    this.stopCrouch();
+    this.stopFastFall();
+    this.jumpCount = 0;
+    applyNormalPlayerShape(this.player);
+    this.player.setPosition(GAMEPLAY.playerX, GAMEPLAY.groundY);
+    this.player.setVelocity(0, 0);
+    this.player.setAngle(0);
+    this.player.body.updateFromGameObject();
+    this.player.play(PLAYER_SKIN.runAnimationKey, true);
+
+    this.obstacles.children.iterate((obstacle) => {
+      if (!obstacle?.active) {
+        return;
+      }
+      obstacle.body.enable = false;
+      this.tweens.add({
+        targets: [obstacle, ...getObstaclePresentationObjects(obstacle)],
+        x: obstacle.x - 250,
+        alpha: 0,
+        duration: 360,
+        ease: 'Cubic.In',
+        onComplete: () => obstacle.destroy(),
+      });
+    });
+
+    const gateGlow = this.add
+      .ellipse(GAMEPLAY.width + 138, 316, 168, 286, 0x35f2df, 0.14)
+      .setStrokeStyle(4, 0xff4fa3, 0.62)
+      .setDepth(28);
+    const gate = this.add
+      .image(GAMEPLAY.width + 138, GAMEPLAY.groundY, 'neon-gate')
+      .setOrigin(0.5, 1)
+      .setDepth(30);
+    const gateLabel = this.add
+      .text(GAMEPLAY.width + 138, 150, '5000 · 未知出口', {
+        fontFamily: FONT_FAMILY,
+        fontSize: '16px',
+        fontStyle: 'bold',
+        color: '#e8fffb',
+        backgroundColor: '#071323',
+        padding: { x: 12, y: 7 },
+        stroke: '#6f39d8',
+        strokeThickness: 3,
+      })
+      .setOrigin(0.5)
+      .setDepth(33);
+
+    playSound(this, 'storyWarning');
+    this.tweens.add({
+      targets: [gate, gateGlow, gateLabel],
+      x: 732,
+      duration: 880,
+      ease: 'Cubic.Out',
+      onComplete: () => this.runIntoNeonGate(gate, gateGlow, gateLabel),
+    });
+    this.tweens.add({
+      targets: gateGlow,
+      scale: 1.08,
+      alpha: 0.25,
+      duration: 280,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.InOut',
+    });
+  }
+
+  runIntoNeonGate(gate, gateGlow, gateLabel) {
+    if (this.runState !== 'neonTransition') {
+      return;
+    }
+
+    playSound(this, 'portal');
+    const speedLines = Array.from({ length: 7 }, (_, index) =>
+      this.add
+        .rectangle(
+          48 + index * 54,
+          188 + (index % 4) * 54,
+          84 + (index % 3) * 24,
+          3,
+          index % 2 ? 0xff4fa3 : 0x35f2df,
+          0.48,
+        )
+        .setOrigin(0, 0.5)
+        .setDepth(27),
+    );
+    this.tweens.add({
+      targets: speedLines,
+      x: '+=300',
+      alpha: 0,
+      duration: 720,
+      ease: 'Cubic.In',
+    });
+    this.tweens.add({
+      targets: gate,
+      scaleX: 1.08,
+      scaleY: 1.03,
+      duration: 190,
+      yoyo: true,
+      repeat: 3,
+      ease: 'Sine.InOut',
+    });
+    this.tweens.add({
+      targets: this.player,
+      x: 726,
+      alpha: 0.12,
+      scale: PLAYER_SKIN.baseScale * 0.22,
+      duration: 860,
+      ease: 'Cubic.In',
+      onUpdate: () => {
+        this.playerShadow.setX(this.player.x);
+        this.powerUps.updatePlayerEffects();
+      },
+      onComplete: () => {
+        gateLabel.destroy();
+        gateGlow.setAlpha(0.42);
+        this.showPortalGlitch(() => {
+          this.scene.start('NeonScene', {
+            ...this.pendingNeonState,
+            playerStartX: 726,
+            arrivalFromPortal: true,
+          });
+        });
+      },
+    });
+  }
+
+  showPortalGlitch(onComplete) {
+    const bars = Array.from({ length: 12 }, (_, index) =>
+      this.add
+        .rectangle(
+          index % 2 ? GAMEPLAY.width : 0,
+          18 + index * 45,
+          GAMEPLAY.width + 160,
+          22 + (index % 3) * 8,
+          index % 3 === 0 ? 0xff4fa3 : index % 3 === 1 ? 0x35f2df : 0x091326,
+          0.9,
+        )
+        .setOrigin(index % 2 ? 1 : 0, 0.5)
+        .setScale(0, 1)
+        .setDepth(110),
+    );
+    this.cameras.main.shake(240, 0.008);
+    this.tweens.add({
+      targets: bars,
+      scaleX: 1,
+      duration: 210,
+      ease: 'Expo.In',
+      onComplete,
+    });
+  }
+
+  showNeonArrival() {
+    this.runState = 'neonArrival';
+    this.distanceToNextObstacle = 820;
+    this.setMobileControlsVisible(false);
+    this.player.body.enable = false;
+    this.player
+      .setAlpha(0.18)
+      .setScale(PLAYER_SKIN.baseScale * 0.22)
+      .setDepth(32)
+      .play(PLAYER_SKIN.runAnimationKey, true);
+
+    const gateGlow = this.add
+      .ellipse(this.playerStartX, 316, 168, 286, 0x35f2df, 0.22)
+      .setStrokeStyle(4, 0xff4fa3, 0.78)
+      .setDepth(27);
+    const gate = this.add
+      .image(this.playerStartX, GAMEPLAY.groundY, 'neon-gate')
+      .setOrigin(0.5, 1)
+      .setDepth(28);
+    const cover = this.add
+      .rectangle(480, 270, GAMEPLAY.width, GAMEPLAY.height, 0x071323, 1)
+      .setDepth(108);
+    const glitchBars = Array.from({ length: 9 }, (_, index) =>
+      this.add
+        .rectangle(
+          480,
+          25 + index * 64,
+          GAMEPLAY.width,
+          18 + (index % 3) * 8,
+          index % 2 ? 0xff4fa3 : 0x35f2df,
+          0.58,
+        )
+        .setDepth(109),
+    );
+
+    this.tweens.add({
+      targets: [cover, ...glitchBars],
+      alpha: 0,
+      duration: 280,
+      ease: 'Cubic.Out',
+      onComplete: () => {
+        cover.destroy();
+        glitchBars.forEach((bar) => bar.destroy());
+      },
+    });
+    this.tweens.add({
+      targets: [this.player, this.playerShadow],
+      x: GAMEPLAY.playerX,
+      duration: 760,
+      ease: 'Cubic.Out',
+      onUpdate: () => this.powerUps.updatePlayerEffects(),
+    });
+    this.tweens.add({
+      targets: this.player,
+      alpha: 1,
+      scale: PLAYER_SKIN.baseScale,
+      duration: 620,
+      ease: 'Back.Out',
+      onComplete: () => {
+        this.player.body.enable = true;
+        this.player.setPosition(GAMEPLAY.playerX, GAMEPLAY.groundY);
+        applyNormalPlayerShape(this.player);
+        this.player.body.updateFromGameObject();
+        this.powerUps.updatePlayerEffects();
+        this.runState = 'playing';
+        this.setMobileControlsVisible(true);
+      },
+    });
+    this.tweens.add({
+      targets: [gate, gateGlow],
+      x: this.playerStartX + 94,
+      alpha: 0,
+      delay: 360,
+      duration: 520,
+      ease: 'Cubic.In',
+      onComplete: () => {
+        gate.destroy();
+        gateGlow.destroy();
+      },
+    });
+
+    const panel = this.add
+      .rectangle(480, 170, 570, 94, 0x071323, 0.9)
+      .setStrokeStyle(3, 0x35f2df, 0.94)
+      .setDepth(70);
+    const title = this.add
+      .text(480, 151, 'CHAPTER III · 霓虹终点线', {
+        fontFamily: FONT_FAMILY,
+        fontSize: '26px',
+        fontStyle: 'bold',
+        color: '#eafffb',
+        stroke: '#6f39d8',
+        strokeThickness: 5,
+      })
+      .setOrigin(0.5)
+      .setDepth(71);
+    const subtitle = this.add
+      .text(480, 192, 'NEON DEADLINE · 向未来继续冲刺', {
+        fontFamily: FONT_FAMILY,
+        fontSize: '15px',
+        fontStyle: 'bold',
+        color: '#ff72bd',
+      })
+      .setOrigin(0.5)
+      .setDepth(71);
+    this.tweens.add({
+      targets: [panel, title, subtitle],
+      y: '-=16',
+      alpha: 0,
+      delay: 1650,
+      duration: 600,
+      ease: 'Sine.In',
+      onComplete: () => {
+        panel.destroy();
+        title.destroy();
+        subtitle.destroy();
+      },
     });
   }
 
@@ -1112,7 +1452,7 @@ export class GameScene extends Phaser.Scene {
     });
     restartButton.once('pointerdown', () => {
       playSound(this, 'start');
-      if (this.isIsekaiWorld) {
+      if (!this.isCampusWorld) {
         this.scene.start('GameScene');
       } else {
         this.scene.restart();
@@ -1165,6 +1505,18 @@ export class GameScene extends Phaser.Scene {
           this.currentSpeed * 0.42,
           safeDeltaSeconds,
         );
+      } else if (this.runState === 'neonTransition') {
+        scrollIsekaiBackdrop(
+          this.backdrop,
+          this.currentSpeed * 0.78,
+          safeDeltaSeconds,
+        );
+      } else if (this.runState === 'neonArrival') {
+        scrollNeonBackdrop(
+          this.backdrop,
+          this.currentSpeed * 0.82,
+          safeDeltaSeconds,
+        );
       }
       return;
     }
@@ -1211,11 +1563,19 @@ export class GameScene extends Phaser.Scene {
     this.scoreText.setText(String(this.score));
     this.highScoreText.setText(`最高\n${Math.max(this.highScore, this.score)}`);
     if (
-      !this.isIsekaiWorld &&
+      this.isCampusWorld &&
       !this.storyTriggered &&
       this.score >= GAMEPLAY.storyTransitionScore
     ) {
       this.beginStoryTransition();
+      return;
+    }
+    if (
+      this.isIsekaiWorld &&
+      !this.neonTransitionTriggered &&
+      this.score >= GAMEPLAY.neonTransitionScore
+    ) {
+      this.beginNeonTransition();
       return;
     }
     const scoreMilestone = Math.floor(this.score / 100);
@@ -1235,9 +1595,11 @@ export class GameScene extends Phaser.Scene {
       .setFillStyle(this.powerUps.isActive('rush') ? COLORS.orange : COLORS.mint)
       .setDisplaySize(Math.max(3, 190 * speedProgress), 8);
 
-    const scrollBackdrop = this.isIsekaiWorld
-      ? scrollIsekaiBackdrop
-      : scrollCampusBackdrop;
+    const scrollBackdrop = this.isNeonWorld
+      ? scrollNeonBackdrop
+      : this.isIsekaiWorld
+        ? scrollIsekaiBackdrop
+        : scrollCampusBackdrop;
     scrollBackdrop(this.backdrop, this.effectiveSpeed, safeDeltaSeconds);
 
     this.distanceToNextObstacle -= this.effectiveSpeed * safeDeltaSeconds;
