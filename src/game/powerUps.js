@@ -481,4 +481,15 @@ export class PowerUpManager {
     this.updateHud();
     this.updatePlayerEffects();
   }
+
+  clearForTransition() {
+    this.stop();
+    [this.skillPickups, this.coins].forEach((group) => {
+      group.getChildren().forEach((pickup) => {
+        this.scene.tweens.killTweensOf(pickup);
+      });
+      group.clear(true, true);
+    });
+    this.toast.setAlpha(0);
+  }
 }

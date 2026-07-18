@@ -464,6 +464,161 @@ export function createGameTextures(scene) {
     graphics.fillEllipse(66, 175, 10, 6);
   });
 
+  saveTexture(scene, 'story-truck', 330, 150, (graphics) => {
+    graphics.fillStyle(0x0b1520, 0.28);
+    graphics.fillEllipse(166, 143, 320, 13);
+
+    graphics.fillStyle(0x304150, 1);
+    graphics.fillRoundedRect(112, 24, 212, 102, 8);
+    graphics.fillStyle(0x415969, 1);
+    graphics.fillRect(126, 34, 186, 11);
+    graphics.lineStyle(3, 0x1d2d3a, 0.85);
+    graphics.strokeRoundedRect(112, 24, 212, 102, 8);
+    for (let x = 138; x < 306; x += 34) {
+      graphics.lineBetween(x, 47, x, 113);
+    }
+
+    graphics.fillStyle(0xb72731, 1);
+    graphics.fillRoundedRect(18, 47, 107, 79, 12);
+    graphics.fillTriangle(18, 47, 86, 47, 18, 93);
+    graphics.fillStyle(0xd83a40, 1);
+    graphics.fillRoundedRect(8, 88, 126, 38, 9);
+    graphics.fillStyle(0xa7d8e6, 1);
+    graphics.fillRoundedRect(33, 56, 45, 31, 5);
+    graphics.fillStyle(0xeafaff, 0.65);
+    graphics.fillTriangle(37, 59, 70, 59, 37, 79);
+    graphics.fillStyle(0x172938, 1);
+    graphics.fillRoundedRect(12, 101, 28, 20, 4);
+    graphics.lineStyle(3, 0xd4dce0, 1);
+    graphics.lineBetween(13, 106, 33, 106);
+    graphics.lineBetween(13, 112, 33, 112);
+    graphics.fillStyle(0xfff2a8, 1);
+    graphics.fillCircle(12, 94, 7);
+    graphics.fillStyle(0xffffff, 0.45);
+    graphics.fillCircle(10, 92, 3);
+
+    [61, 270].forEach((x) => {
+      graphics.fillStyle(0x14202a, 1);
+      graphics.fillCircle(x, 128, 19);
+      graphics.fillStyle(0x83919b, 1);
+      graphics.fillCircle(x, 128, 9);
+      graphics.fillStyle(0xd7e0e4, 1);
+      graphics.fillCircle(x, 128, 4);
+    });
+
+    graphics.fillStyle(0xffcf4a, 1);
+    graphics.fillRoundedRect(162, 66, 112, 33, 6);
+    graphics.fillStyle(0x1a2b38, 1);
+    graphics.fillRoundedRect(171, 73, 94, 19, 4);
+    graphics.fillStyle(0xfff3c4, 1);
+    graphics.fillTriangle(181, 83, 191, 75, 191, 91);
+    graphics.fillTriangle(205, 83, 215, 75, 215, 91);
+    graphics.fillRoundedRect(226, 79, 29, 7, 3);
+  });
+
+  saveTexture(scene, 'story-portal', 240, 240, (graphics) => {
+    graphics.fillStyle(0x160d35, 0.35);
+    graphics.fillCircle(120, 120, 110);
+    graphics.lineStyle(13, 0x7f5cff, 0.36);
+    graphics.strokeCircle(120, 120, 96);
+    graphics.lineStyle(8, 0xbfa7ff, 0.82);
+    graphics.strokeCircle(120, 120, 78);
+    graphics.lineStyle(4, 0x8fffe0, 0.92);
+    graphics.strokeCircle(120, 120, 61);
+    graphics.fillStyle(0xf7f2ff, 0.86);
+    graphics.fillCircle(120, 120, 48);
+    graphics.fillStyle(0xb9a4ff, 0.38);
+    graphics.fillCircle(105, 105, 30);
+    [
+      [120, 17], [186, 40], [220, 112], [194, 190],
+      [120, 223], [47, 198], [19, 121], [46, 46],
+    ].forEach(([x, y], index) => {
+      graphics.fillStyle(index % 2 ? 0x8fffe0 : 0xe5d7ff, 0.95);
+      graphics.fillCircle(x, y, index % 2 ? 4 : 6);
+    });
+  });
+
+  saveTexture(scene, 'obstacle-slime', 64, 44, (graphics) => {
+    graphics.fillStyle(0x11142a, 0.24);
+    graphics.fillEllipse(32, 41, 60, 7);
+    graphics.fillStyle(0x70d6a4, 1);
+    graphics.fillEllipse(32, 27, 60, 32);
+    graphics.fillTriangle(8, 29, 21, 5, 34, 28);
+    graphics.fillStyle(0xb8f5d3, 0.72);
+    graphics.fillEllipse(21, 18, 15, 10);
+    graphics.fillStyle(0x18263a, 1);
+    graphics.fillCircle(24, 28, 3);
+    graphics.fillCircle(43, 28, 3);
+    graphics.lineStyle(2, 0x355e55, 1);
+    graphics.arc(34, 31, 7, 0.2, 2.8);
+  });
+
+  saveTexture(scene, 'obstacle-rune-stone', 62, 72, (graphics) => {
+    graphics.fillStyle(0x101429, 0.23);
+    graphics.fillEllipse(31, 69, 60, 7);
+    graphics.fillStyle(0x667586, 1);
+    graphics.fillTriangle(7, 68, 15, 13, 29, 2);
+    graphics.fillTriangle(7, 68, 29, 2, 54, 68);
+    graphics.fillStyle(0x8495a5, 1);
+    graphics.fillTriangle(16, 61, 21, 18, 29, 10);
+    graphics.lineStyle(4, 0x8fffe0, 0.9);
+    graphics.lineBetween(31, 23, 23, 37);
+    graphics.lineBetween(23, 37, 34, 45);
+    graphics.lineBetween(34, 45, 27, 58);
+    graphics.fillStyle(0xb9fff0, 0.7);
+    graphics.fillCircle(23, 37, 4);
+  });
+
+  saveTexture(scene, 'obstacle-crystal-spire', 92, 156, (graphics) => {
+    graphics.fillStyle(0x101429, 0.25);
+    graphics.fillEllipse(46, 152, 88, 8);
+    graphics.fillStyle(0x51408f, 1);
+    graphics.fillTriangle(6, 150, 31, 51, 51, 150);
+    graphics.fillStyle(0x745bd0, 1);
+    graphics.fillTriangle(24, 151, 54, 5, 75, 151);
+    graphics.fillStyle(0x9a85ed, 0.92);
+    graphics.fillTriangle(47, 136, 55, 21, 65, 137);
+    graphics.fillStyle(0x5de6cb, 0.84);
+    graphics.fillTriangle(56, 151, 76, 67, 89, 151);
+    graphics.lineStyle(3, 0xe4dcff, 0.72);
+    graphics.lineBetween(54, 6, 54, 128);
+    graphics.lineBetween(31, 52, 19, 135);
+  });
+
+  saveTexture(scene, 'obstacle-magic-orb', 58, 38, (graphics) => {
+    graphics.lineStyle(3, 0xa992ff, 0.38);
+    graphics.strokeEllipse(29, 19, 55, 23);
+    graphics.fillStyle(0x745bd0, 0.3);
+    graphics.fillCircle(29, 19, 18);
+    graphics.fillStyle(0xc5b6ff, 0.9);
+    graphics.fillCircle(29, 19, 13);
+    graphics.fillStyle(0xf8f4ff, 1);
+    graphics.fillCircle(24, 14, 5);
+    graphics.fillStyle(0x8fffe0, 0.9);
+    graphics.fillCircle(42, 7, 3);
+    graphics.fillCircle(9, 27, 2);
+  });
+
+  saveTexture(scene, 'obstacle-shadow-bat', 112, 220, (graphics) => {
+    graphics.fillStyle(0x252044, 1);
+    graphics.fillTriangle(56, 34, 2, 3, 16, 62);
+    graphics.fillTriangle(56, 34, 110, 3, 96, 62);
+    graphics.fillTriangle(11, 22, 31, 31, 18, 49);
+    graphics.fillTriangle(101, 22, 81, 31, 94, 49);
+    graphics.fillEllipse(56, 38, 39, 48);
+    graphics.fillTriangle(44, 23, 49, 3, 57, 24);
+    graphics.fillTriangle(55, 24, 64, 3, 68, 25);
+    graphics.fillStyle(0xff6f9f, 1);
+    graphics.fillCircle(49, 33, 3);
+    graphics.fillCircle(64, 33, 3);
+    graphics.lineStyle(3, 0x5b4a93, 0.72);
+    graphics.lineBetween(38, 58, 27, 123);
+    graphics.lineBetween(74, 58, 84, 123);
+    graphics.fillStyle(0xa992ff, 0.32);
+    graphics.fillCircle(27, 125, 8);
+    graphics.fillCircle(84, 125, 8);
+  });
+
   saveTexture(scene, 'ground-tile', 240, 90, (graphics) => {
     graphics.fillStyle(COLORS.grassDark, 1);
     graphics.fillRect(0, 0, 240, 16);
@@ -570,5 +725,118 @@ export function createGameTextures(scene) {
     graphics.fillRoundedRect(559, 214, 57, 8, 3);
     graphics.fillRoundedRect(565, 221, 5, 31, 2);
     graphics.fillRoundedRect(605, 221, 5, 31, 2);
+  });
+
+  saveTexture(scene, 'isekai-sky', 32, 450, (graphics) => {
+    const bands = [
+      0x17122f, 0x1d183d, 0x251e4c, 0x2e275b, 0x393265,
+      0x49406f, 0x5a5078, 0x706483, 0x887991, 0xa08c9d,
+    ];
+    bands.forEach((color, index) => {
+      graphics.fillStyle(color, 1);
+      graphics.fillRect(0, index * 45, 32, 46);
+    });
+  });
+
+  saveTexture(scene, 'isekai-far', 640, 230, (graphics) => {
+    [
+      [43, 28, 2], [102, 74, 1.5], [176, 39, 2], [254, 89, 1.4],
+      [341, 35, 1.8], [421, 67, 1.5], [516, 24, 2], [594, 83, 1.6],
+    ].forEach(([x, y, radius], index) => {
+      graphics.fillStyle(index % 2 ? 0xb9a5ff : 0x8fffe0, 0.78);
+      graphics.fillCircle(x, y, radius);
+    });
+
+    graphics.fillStyle(0x312b55, 0.84);
+    graphics.fillTriangle(0, 230, 118, 78, 244, 230);
+    graphics.fillTriangle(134, 230, 292, 51, 438, 230);
+    graphics.fillTriangle(362, 230, 520, 83, 640, 230);
+    graphics.fillStyle(0x4d426e, 0.66);
+    graphics.fillTriangle(34, 230, 202, 116, 374, 230);
+    graphics.fillTriangle(338, 230, 487, 126, 638, 230);
+
+    graphics.fillStyle(0x1e1b38, 0.93);
+    graphics.fillRect(482, 107, 112, 123);
+    graphics.fillRect(463, 82, 32, 148);
+    graphics.fillRect(582, 91, 29, 139);
+    graphics.fillTriangle(457, 82, 479, 48, 501, 82);
+    graphics.fillTriangle(577, 91, 596, 57, 616, 91);
+    graphics.fillTriangle(497, 107, 539, 69, 580, 107);
+    graphics.fillStyle(0xf6d982, 0.76);
+    [
+      [475, 103], [475, 131], [592, 112], [592, 141],
+      [511, 131], [540, 131], [568, 131], [511, 161], [568, 161],
+    ].forEach(([x, y]) => graphics.fillRoundedRect(x, y, 7, 11, 2));
+  });
+
+  saveTexture(scene, 'isekai-scenery', 640, 270, (graphics) => {
+    graphics.fillStyle(0x223c3d, 1);
+    graphics.fillRect(0, 246, 640, 24);
+
+    for (let x = 12; x < 640; x += 56) {
+      const height = 72 + ((x * 5) % 52);
+      graphics.fillStyle(x % 112 === 12 ? 0x274b43 : 0x31564a, 1);
+      graphics.fillTriangle(x - 22, 250, x, 250 - height, x + 24, 250);
+      graphics.fillTriangle(x - 17, 222, x, 250 - height - 28, x + 18, 222);
+      graphics.fillStyle(0x18352f, 1);
+      graphics.fillRect(x - 3, 226, 6, 29);
+    }
+
+    graphics.fillStyle(0x8b6b5a, 1);
+    graphics.fillRoundedRect(92, 164, 128, 89, 5);
+    graphics.fillStyle(0x563a4c, 1);
+    graphics.fillTriangle(75, 166, 156, 112, 236, 166);
+    graphics.fillStyle(0xb08a66, 1);
+    graphics.fillRoundedRect(268, 180, 116, 73, 5);
+    graphics.fillStyle(0x654153, 1);
+    graphics.fillTriangle(253, 182, 326, 132, 399, 182);
+    graphics.fillStyle(0xeed58e, 0.92);
+    [
+      [111, 185], [143, 185], [179, 185], [286, 201], [350, 201],
+    ].forEach(([x, y]) => {
+      graphics.fillRoundedRect(x, y, 18, 22, 3);
+      graphics.lineStyle(2, 0x765a4e, 0.9);
+      graphics.lineBetween(x + 9, y, x + 9, y + 22);
+    });
+    graphics.fillStyle(0x3b2b3a, 1);
+    graphics.fillRoundedRect(146, 213, 26, 40, 4);
+    graphics.fillRoundedRect(312, 219, 24, 34, 4);
+
+    graphics.fillStyle(0x273b46, 1);
+    graphics.fillRoundedRect(439, 133, 10, 120, 3);
+    graphics.fillStyle(0x9b7bd8, 1);
+    graphics.fillCircle(444, 132, 15);
+    graphics.fillStyle(0xe9ddff, 0.7);
+    graphics.fillCircle(439, 127, 5);
+
+    graphics.lineStyle(4, 0x9f8566, 1);
+    graphics.lineBetween(405, 235, 640, 235);
+    for (let x = 415; x < 640; x += 34) {
+      graphics.lineBetween(x, 218, x, 255);
+    }
+  });
+
+  saveTexture(scene, 'isekai-ground', 240, 90, (graphics) => {
+    graphics.fillStyle(0x19372f, 1);
+    graphics.fillRect(0, 0, 240, 16);
+    graphics.fillStyle(0x3f7357, 1);
+    graphics.fillRect(0, 0, 240, 11);
+    for (let x = 3; x < 240; x += 18) {
+      graphics.fillStyle(x % 36 === 3 ? 0x72b36b : 0x4e8c62, 1);
+      graphics.fillTriangle(x, 13, x + 5, 1, x + 11, 13);
+    }
+    graphics.fillStyle(0x3a3747, 1);
+    graphics.fillRect(0, 16, 240, 74);
+    graphics.fillStyle(0x585465, 1);
+    graphics.fillRect(0, 22, 240, 68);
+    graphics.lineStyle(2, 0x797388, 0.62);
+    graphics.lineBetween(0, 55, 240, 55);
+    graphics.lineBetween(48, 22, 35, 90);
+    graphics.lineBetween(137, 22, 151, 90);
+    graphics.lineBetween(220, 22, 209, 90);
+    graphics.lineStyle(2, 0x8fffe0, 0.38);
+    graphics.arc(91, 67, 13, 0, Math.PI * 2);
+    graphics.lineBetween(80, 67, 102, 67);
+    graphics.lineBetween(91, 56, 91, 78);
   });
 }

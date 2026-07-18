@@ -208,6 +208,16 @@ export class MenuScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
       .setDepth(12);
+
+    this.add
+      .text(480, 360, '达到 1000 分，开启异世界主线', {
+        fontFamily: FONT_FAMILY,
+        fontSize: '13px',
+        fontStyle: 'bold',
+        color: '#7a5aa8',
+      })
+      .setOrigin(0.5)
+      .setDepth(12);
   }
 
   createKeyChip(x, y, label, width) {

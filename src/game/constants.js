@@ -10,6 +10,7 @@ export const GAMEPLAY = Object.freeze({
   doubleJumpVelocity: -620,
   fastFallVelocity: 820,
   maxJumps: 2,
+  storyTransitionScore: 1000,
   initialSpeed: 300,
   speedIncreasePerSecond: 5,
   maxSpeed: 540,
@@ -121,5 +122,50 @@ export const OBSTACLES = Object.freeze([
     height: 220,
     action: 'crouch',
     body: { width: 96, height: 178, offsetX: 4, offsetY: 0 },
+  },
+]);
+
+export const ISEKAI_OBSTACLES = Object.freeze([
+  {
+    key: 'obstacle-slime',
+    label: '森林史莱姆',
+    width: 64,
+    height: 44,
+    action: 'jump',
+    body: { width: 54, height: 34, offsetX: 5, offsetY: 10 },
+  },
+  {
+    key: 'obstacle-rune-stone',
+    label: '符文石碑',
+    width: 62,
+    height: 72,
+    action: 'jump',
+    body: { width: 52, height: 66, offsetX: 5, offsetY: 6 },
+  },
+  {
+    key: 'obstacle-crystal-spire',
+    label: '魔晶尖塔',
+    width: 92,
+    height: 156,
+    action: 'doubleJump',
+    body: { width: 76, height: 148, offsetX: 8, offsetY: 8 },
+  },
+  {
+    key: 'obstacle-magic-orb',
+    label: '漂浮魔球',
+    width: 58,
+    height: 38,
+    action: 'either',
+    placement: 'air',
+    y: 400,
+    body: { width: 30, height: 30, offsetX: 14, offsetY: 4 },
+  },
+  {
+    key: 'obstacle-shadow-bat',
+    label: '低飞影蝠',
+    width: 112,
+    height: 220,
+    action: 'crouch',
+    body: { width: 100, height: 178, offsetX: 6, offsetY: 0 },
   },
 ]);

@@ -1,8 +1,15 @@
 import Phaser from 'phaser';
-import { COLORS, GAMEPLAY, OBSTACLES } from '../constants.js';
+import {
+  COLORS,
+  GAMEPLAY,
+  ISEKAI_OBSTACLES,
+  OBSTACLES,
+} from '../constants.js';
 import {
   createCampusBackdrop,
+  createIsekaiBackdrop,
   scrollCampusBackdrop,
+  scrollIsekaiBackdrop,
 } from '../sceneVisuals.js';
 import {
   PLAYER_SKIN,
@@ -21,18 +28,25 @@ import {
 const FONT_FAMILY = 'Arial, "Microsoft YaHei", sans-serif';
 
 export class GameScene extends Phaser.Scene {
-  constructor() {
-    super('GameScene');
+  constructor(sceneKey = 'GameScene', worldMode = 'campus') {
+    super(sceneKey);
+    this.worldMode = worldMode;
+    this.isIsekaiWorld = worldMode === 'isekai';
   }
 
-  init() {
+  init(data = {}) {
     this.runState = 'playing';
-    this.elapsedSeconds = 0;
-    this.score = 0;
-    this.scoreAccumulator = 0;
-    this.highScore = readHighScore();
-    this.currentSpeed = GAMEPLAY.initialSpeed;
-    this.effectiveSpeed = GAMEPLAY.initialSpeed;
+    this.elapsedSeconds = data.elapsedSeconds ?? 0;
+    this.scoreAccumulator = data.scoreAccumulator ?? 0;
+    this.score = Math.floor(this.scoreAccumulator);
+    this.highScore = Math.max(data.highScore ?? 0, readHighScore());
+    this.currentSpeed = Math.min(
+      GAMEPLAY.maxSpeed,
+      data.currentSpeed ??
+        GAMEPLAY.initialSpeed +
+          this.elapsedSeconds * GAMEPLAY.speedIncreasePerSecond,
+    );
+    this.effectiveSpeed = this.currentSpeed;
     this.distanceToNextObstacle = GAMEPLAY.initialSpawnDistance;
     this.pointerJumpHandler = null;
     this.isNewRecord = false;
@@ -40,17 +54,27 @@ export class GameScene extends Phaser.Scene {
     this.isFastFalling = false;
     this.jumpCount = 0;
     this.lastObstacleKey = null;
-    this.lastScoreMilestone = 0;
+    this.lastScoreMilestone = Math.floor(this.score / 100);
+    this.storyTriggered = this.isIsekaiWorld;
+    this.obstacleDefinitions = this.isIsekaiWorld
+      ? ISEKAI_OBSTACLES
+      : OBSTACLES;
   }
 
   create() {
-    this.backdrop = createCampusBackdrop(this);
+    this.backdrop = this.isIsekaiWorld
+      ? createIsekaiBackdrop(this)
+      : createCampusBackdrop(this);
     this.createGround();
     this.createPlayer();
     this.createObstacles();
     this.createHud();
     this.createPowerUps();
     this.createInput();
+
+    if (this.isIsekaiWorld) {
+      this.showIsekaiArrival();
+    }
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.shutdown, this);
   }
@@ -197,6 +221,25 @@ export class GameScene extends Phaser.Scene {
       })
       .setOrigin(1, 0.5)
       .setDepth(21);
+    this.add
+      .rectangle(938, 121, 190, 28, this.isIsekaiWorld ? 0x493877 : COLORS.navy, 0.94)
+      .setOrigin(1, 0.5)
+      .setStrokeStyle(2, this.isIsekaiWorld ? 0xb9a5ff : COLORS.white, 0.78)
+      .setDepth(20);
+    this.add
+      .text(
+        925,
+        121,
+        this.isIsekaiWorld ? 'CHAPTER II · 异世界' : '主线目标 · 1000 分',
+        {
+          fontFamily: FONT_FAMILY,
+          fontSize: '12px',
+          fontStyle: 'bold',
+          color: '#fff7e3',
+        },
+      )
+      .setOrigin(1, 0.5)
+      .setDepth(21);
     this.updatePlayerStatus();
   }
 
@@ -338,7 +381,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   spawnObstacle() {
-    const availableObstacles = OBSTACLES.filter(
+    const availableObstacles = this.obstacleDefinitions.filter(
       ({ key }) => key !== this.lastObstacleKey,
     );
     const definition = Phaser.Utils.Array.GetRandom(availableObstacles);
@@ -437,6 +480,249 @@ export class GameScene extends Phaser.Scene {
       duration: isRush ? 360 : 300,
       ease: 'Cubic.Out',
       onComplete: () => obstacle.destroy(),
+    });
+  }
+
+  beginStoryTransition() {
+    if (
+      this.isIsekaiWorld ||
+      this.storyTriggered ||
+      this.runState !== 'playing'
+    ) {
+      return;
+    }
+
+    this.storyTriggered = true;
+    this.runState = 'storyTransition';
+    this.powerUps.clearForTransition();
+    this.stopCrouch();
+    this.stopFastFall();
+    this.jumpCount = 0;
+    applyNormalPlayerShape(this.player);
+    this.player.setPosition(GAMEPLAY.playerX, GAMEPLAY.groundY);
+    this.player.body.updateFromGameObject();
+    this.player.setVelocity(0, 0);
+    this.player.setAngle(0);
+    this.player.play(PLAYER_SKIN.runAnimationKey, true);
+
+    this.obstacles.children.iterate((obstacle) => {
+      if (!obstacle?.active) {
+        return;
+      }
+      obstacle.body.enable = false;
+      this.tweens.add({
+        targets: obstacle,
+        x: obstacle.x - 220,
+        alpha: 0,
+        duration: 300,
+        ease: 'Cubic.In',
+        onComplete: () => obstacle.destroy(),
+      });
+    });
+
+    const topBar = this.add
+      .rectangle(480, -26, GAMEPLAY.width, 52, 0x080b16, 0.96)
+      .setDepth(90);
+    const bottomBar = this.add
+      .rectangle(480, GAMEPLAY.height + 26, GAMEPLAY.width, 52, 0x080b16, 0.96)
+      .setDepth(90);
+    this.tweens.add({ targets: topBar, y: 26, duration: 360, ease: 'Sine.Out' });
+    this.tweens.add({
+      targets: bottomBar,
+      y: GAMEPLAY.height - 26,
+      duration: 360,
+      ease: 'Sine.Out',
+    });
+
+    const chapterTag = this.add
+      .text(480, 78, '主线事件 · 命运的岔路口', {
+        fontFamily: FONT_FAMILY,
+        fontSize: '18px',
+        fontStyle: 'bold',
+        color: '#fff7e3',
+        stroke: '#173c59',
+        strokeThickness: 5,
+      })
+      .setOrigin(0.5)
+      .setDepth(95)
+      .setAlpha(0);
+    this.tweens.add({
+      targets: chapterTag,
+      alpha: 1,
+      y: 88,
+      duration: 340,
+      ease: 'Sine.Out',
+    });
+
+    playSound(this, 'storyWarning');
+    this.time.delayedCall(520, () => this.runTruckCutscene());
+  }
+
+  runTruckCutscene() {
+    if (this.runState !== 'storyTransition') {
+      return;
+    }
+
+    const portal = this.add
+      .image(GAMEPLAY.playerX, 238, 'story-portal')
+      .setScale(0.05)
+      .setAlpha(0)
+      .setDepth(32);
+    const truck = this.add
+      .image(GAMEPLAY.width + 210, GAMEPLAY.groundY, 'story-truck')
+      .setOrigin(0.5, 1)
+      .setDepth(34);
+    const speedLines = [0, 1, 2, 3].map((index) =>
+      this.add
+        .rectangle(
+          GAMEPLAY.width + 62 + index * 58,
+          334 + index * 24,
+          96 - index * 10,
+          4,
+          0xeafaff,
+          0.62 - index * 0.08,
+        )
+        .setOrigin(0, 0.5)
+        .setDepth(33),
+    );
+
+    playSound(this, 'truckHorn');
+    this.cameras.main.shake(180, 0.0025);
+    this.tweens.add({
+      targets: [...speedLines, truck],
+      x: `-=${GAMEPLAY.width - 25}`,
+      duration: 920,
+      ease: 'Quart.In',
+      onComplete: () => this.playTruckImpact(truck, portal, speedLines),
+    });
+  }
+
+  playTruckImpact(truck, portal, speedLines) {
+    if (this.runState !== 'storyTransition') {
+      return;
+    }
+
+    playSound(this, 'truckImpact');
+    this.cameras.main.shake(380, 0.018);
+    this.cameras.main.flash(180, 255, 238, 207);
+    speedLines.forEach((line) => line.destroy());
+
+    this.player.body.enable = false;
+    this.player.anims.stop();
+    this.player.setDepth(40);
+    portal.setAlpha(1);
+    this.tweens.add({
+      targets: portal,
+      scale: 1.2,
+      angle: 190,
+      duration: 720,
+      ease: 'Back.Out',
+    });
+    this.tweens.add({
+      targets: truck,
+      x: -230,
+      duration: 580,
+      ease: 'Cubic.Out',
+    });
+    this.tweens.add({
+      targets: this.player,
+      x: GAMEPLAY.playerX,
+      y: 238,
+      angle: -720,
+      scale: PLAYER_SKIN.baseScale * 0.2,
+      alpha: 0.2,
+      duration: 820,
+      ease: 'Cubic.Out',
+    });
+
+    const impactText = this.add
+      .text(335, 250, '命运转弯！', {
+        fontFamily: FONT_FAMILY,
+        fontSize: '34px',
+        fontStyle: 'bold',
+        color: '#ffffff',
+        stroke: '#7e3155',
+        strokeThickness: 8,
+      })
+      .setOrigin(0.5)
+      .setScale(0.25)
+      .setAngle(-8)
+      .setDepth(96);
+    this.tweens.add({
+      targets: impactText,
+      scale: 1,
+      angle: 4,
+      duration: 260,
+      ease: 'Back.Out',
+    });
+
+    this.time.delayedCall(780, () => {
+      playSound(this, 'portal');
+      this.cameras.main.once('camerafadeoutcomplete', () => {
+        this.scene.start('IsekaiScene', {
+          elapsedSeconds: this.elapsedSeconds,
+          scoreAccumulator: this.scoreAccumulator,
+          currentSpeed: this.currentSpeed,
+          highScore: this.highScore,
+        });
+      });
+      this.cameras.main.fadeOut(760, 246, 240, 255);
+    });
+  }
+
+  showIsekaiArrival() {
+    this.distanceToNextObstacle = 620;
+    this.cameras.main.fadeIn(900, 246, 240, 255);
+    playSound(this, 'isekaiArrival', { delay: 0.1 });
+
+    const aura = this.add
+      .circle(GAMEPLAY.playerX, GAMEPLAY.groundY - 34, 54, 0xb9a5ff, 0.26)
+      .setStrokeStyle(3, 0x8fffe0, 0.82)
+      .setDepth(7);
+    this.tweens.add({
+      targets: aura,
+      scale: 1.55,
+      alpha: 0,
+      duration: 1100,
+      ease: 'Sine.Out',
+      onComplete: () => aura.destroy(),
+    });
+
+    const panel = this.add
+      .rectangle(480, 179, 520, 98, 0x17122f, 0.86)
+      .setStrokeStyle(3, 0xb9a5ff, 0.9)
+      .setDepth(70);
+    const title = this.add
+      .text(480, 160, 'CHAPTER II · 银月异世界', {
+        fontFamily: FONT_FAMILY,
+        fontSize: '26px',
+        fontStyle: 'bold',
+        color: '#f7f2ff',
+      })
+      .setOrigin(0.5)
+      .setDepth(71);
+    const subtitle = this.add
+      .text(480, 199, '新的旅程，从零开始', {
+        fontFamily: FONT_FAMILY,
+        fontSize: '17px',
+        fontStyle: 'bold',
+        color: '#8fffe0',
+      })
+      .setOrigin(0.5)
+      .setDepth(71);
+
+    this.tweens.add({
+      targets: [panel, title, subtitle],
+      y: '-=18',
+      alpha: 0,
+      delay: 1700,
+      duration: 650,
+      ease: 'Sine.In',
+      onComplete: () => {
+        panel.destroy();
+        title.destroy();
+        subtitle.destroy();
+      },
     });
   }
 
@@ -567,7 +853,11 @@ export class GameScene extends Phaser.Scene {
     });
     restartButton.once('pointerdown', () => {
       playSound(this, 'start');
-      this.scene.restart();
+      if (this.isIsekaiWorld) {
+        this.scene.start('GameScene');
+      } else {
+        this.scene.restart();
+      }
     });
   }
 
@@ -601,16 +891,23 @@ export class GameScene extends Phaser.Scene {
   }
 
   update(_time, delta) {
+    const safeDeltaSeconds = Math.min(delta, 50) / 1000;
     if (Phaser.Input.Keyboard.JustDown(this.mKey)) {
       toggleSound(this);
       this.updatePlayerStatus();
     }
 
     if (this.runState !== 'playing') {
+      if (this.runState === 'storyTransition') {
+        scrollCampusBackdrop(
+          this.backdrop,
+          this.currentSpeed * 0.42,
+          safeDeltaSeconds,
+        );
+      }
       return;
     }
 
-    const safeDeltaSeconds = Math.min(delta, 50) / 1000;
     this.powerUps.updateTimers(safeDeltaSeconds);
 
     this.updateCrouchInput();
@@ -640,6 +937,14 @@ export class GameScene extends Phaser.Scene {
 
     this.scoreText.setText(String(this.score));
     this.highScoreText.setText(`最高\n${Math.max(this.highScore, this.score)}`);
+    if (
+      !this.isIsekaiWorld &&
+      !this.storyTriggered &&
+      this.score >= GAMEPLAY.storyTransitionScore
+    ) {
+      this.beginStoryTransition();
+      return;
+    }
     const scoreMilestone = Math.floor(this.score / 100);
     if (scoreMilestone > this.lastScoreMilestone) {
       this.lastScoreMilestone = scoreMilestone;
@@ -657,11 +962,10 @@ export class GameScene extends Phaser.Scene {
       .setFillStyle(this.powerUps.isActive('rush') ? COLORS.orange : COLORS.mint)
       .setDisplaySize(Math.max(3, 190 * speedProgress), 8);
 
-    scrollCampusBackdrop(
-      this.backdrop,
-      this.effectiveSpeed,
-      safeDeltaSeconds,
-    );
+    const scrollBackdrop = this.isIsekaiWorld
+      ? scrollIsekaiBackdrop
+      : scrollCampusBackdrop;
+    scrollBackdrop(this.backdrop, this.effectiveSpeed, safeDeltaSeconds);
 
     this.distanceToNextObstacle -= this.effectiveSpeed * safeDeltaSeconds;
     if (this.distanceToNextObstacle <= 0) {

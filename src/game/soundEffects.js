@@ -37,6 +37,29 @@ const SOUND_LIBRARY = Object.freeze({
     { frequency: 659, duration: 0.09, delay: 0.075, type: 'sine', volume: 0.034 },
     { frequency: 784, duration: 0.12, delay: 0.15, type: 'sine', volume: 0.038 },
   ],
+  storyWarning: [
+    { frequency: 392, duration: 0.13, type: 'triangle', volume: 0.038 },
+    { frequency: 392, duration: 0.13, delay: 0.18, type: 'triangle', volume: 0.038 },
+    { frequency: 523, duration: 0.2, delay: 0.36, type: 'sine', volume: 0.04 },
+  ],
+  truckHorn: [
+    { frequency: 196, endFrequency: 174, duration: 0.42, type: 'sawtooth', volume: 0.045 },
+    { frequency: 247, endFrequency: 220, duration: 0.42, type: 'square', volume: 0.025 },
+  ],
+  truckImpact: [
+    { frequency: 130, endFrequency: 42, duration: 0.42, type: 'sawtooth', volume: 0.055 },
+    { frequency: 92, endFrequency: 48, duration: 0.5, type: 'square', volume: 0.034 },
+  ],
+  portal: [
+    { frequency: 220, endFrequency: 880, duration: 0.62, type: 'sine', volume: 0.036 },
+    { frequency: 330, endFrequency: 1320, duration: 0.72, delay: 0.08, type: 'triangle', volume: 0.03 },
+  ],
+  isekaiArrival: [
+    { frequency: 392, duration: 0.15, type: 'sine', volume: 0.032 },
+    { frequency: 523, duration: 0.16, delay: 0.13, type: 'sine', volume: 0.034 },
+    { frequency: 659, duration: 0.18, delay: 0.26, type: 'sine', volume: 0.036 },
+    { frequency: 988, duration: 0.32, delay: 0.4, type: 'triangle', volume: 0.028 },
+  ],
   gameOver: [
     { frequency: 300, endFrequency: 145, duration: 0.34, type: 'sawtooth', volume: 0.04 },
     { frequency: 190, endFrequency: 90, duration: 0.3, delay: 0.11, type: 'triangle', volume: 0.035 },
