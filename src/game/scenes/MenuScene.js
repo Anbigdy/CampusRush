@@ -5,6 +5,11 @@ import {
   scrollCampusBackdrop,
 } from '../sceneVisuals.js';
 import { readHighScore } from '../storage.js';
+import {
+  isSoundEnabled,
+  playSound,
+  toggleSound,
+} from '../soundEffects.js';
 
 const FONT_FAMILY = 'Arial, "Microsoft YaHei", sans-serif';
 
@@ -17,6 +22,7 @@ export class MenuScene extends Phaser.Scene {
     this.hasStarted = false;
     this.backdrop = createCampusBackdrop(this);
     this.createDecorations();
+    this.createSoundToggle();
     this.createTitle();
     this.createInstructionCard();
     this.createStartButton();
@@ -88,6 +94,34 @@ export class MenuScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
       .setDepth(10);
+  }
+
+  createSoundToggle() {
+    const button = this.add
+      .rectangle(848, 106, 154, 34, COLORS.cream, 0.96)
+      .setStrokeStyle(2, COLORS.navy, 0.82)
+      .setInteractive({ useHandCursor: true })
+      .setDepth(12);
+    const label = this.add
+      .text(848, 106, '', {
+        fontFamily: FONT_FAMILY,
+        fontSize: '14px',
+        fontStyle: 'bold',
+        color: '#173c59',
+      })
+      .setOrigin(0.5)
+      .setDepth(13);
+    const updateLabel = () => {
+      label.setText(`音效  ${isSoundEnabled() ? '开' : '关'}`);
+    };
+
+    updateLabel();
+    button.on('pointerover', () => button.setFillStyle(0xffffff, 1));
+    button.on('pointerout', () => button.setFillStyle(COLORS.cream, 0.96));
+    button.on('pointerdown', () => {
+      toggleSound(this);
+      updateLabel();
+    });
   }
 
   createInstructionCard() {
@@ -224,6 +258,7 @@ export class MenuScene extends Phaser.Scene {
         return;
       }
       this.hasStarted = true;
+      playSound(this, 'start');
       this.scene.start('GameScene');
     });
   }

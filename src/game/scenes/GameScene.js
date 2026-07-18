@@ -5,6 +5,11 @@ import {
   scrollCampusBackdrop,
 } from '../sceneVisuals.js';
 import { readHighScore, writeHighScore } from '../storage.js';
+import {
+  isSoundEnabled,
+  playSound,
+  toggleSound,
+} from '../soundEffects.js';
 
 const FONT_FAMILY = 'Arial, "Microsoft YaHei", sans-serif';
 
@@ -24,6 +29,7 @@ export class GameScene extends Phaser.Scene {
     this.isNewRecord = false;
     this.isCrouching = false;
     this.lastObstacleKey = null;
+    this.lastScoreMilestone = 0;
   }
 
   create() {
@@ -150,25 +156,42 @@ export class GameScene extends Phaser.Scene {
       .setDepth(22);
 
     this.add
-      .rectangle(938, 40, 274, 44, COLORS.navyDark, 0.86)
+      .rectangle(938, 40, 354, 44, COLORS.navyDark, 0.86)
       .setOrigin(1, 0.5)
       .setStrokeStyle(2, COLORS.white, 0.8)
       .setDepth(20);
     this.add
-      .text(919, 40, 'SPACE / ↑ 跳跃   ·   ↓ / S 下蹲', {
+      .text(919, 40, 'SPACE / ↑ 跳跃  ·  ↓ / S 下蹲  ·  M 音效', {
         fontFamily: FONT_FAMILY,
-        fontSize: '14px',
+        fontSize: '13px',
         fontStyle: 'bold',
         color: '#fff7e3',
       })
       .setOrigin(1, 0.5)
       .setDepth(21);
+
+    this.add
+      .rectangle(938, 83, 104, 28, COLORS.cream, 0.95)
+      .setOrigin(1, 0.5)
+      .setStrokeStyle(2, COLORS.navy, 0.72)
+      .setDepth(20);
+    this.soundStatusText = this.add
+      .text(925, 83, '', {
+        fontFamily: FONT_FAMILY,
+        fontSize: '12px',
+        fontStyle: 'bold',
+        color: '#315870',
+      })
+      .setOrigin(1, 0.5)
+      .setDepth(21);
+    this.updateSoundStatus();
   }
 
   createInput() {
     this.cursors = this.input.keyboard.createCursorKeys();
     this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
     this.sKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S);
+    this.mKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.M);
     this.pointerJumpHandler = () => this.tryJump();
     this.input.on('pointerdown', this.pointerJumpHandler);
   }
@@ -191,6 +214,7 @@ export class GameScene extends Phaser.Scene {
     this.player.setTexture('player-jump');
     this.player.setAngle(-4);
     this.player.setVelocityY(GAMEPLAY.jumpVelocity);
+    playSound(this, 'jump');
   }
 
   startCrouch() {
@@ -209,6 +233,7 @@ export class GameScene extends Phaser.Scene {
     this.player.setAngle(0);
     this.player.body.setSize(40, 30);
     this.player.body.setOffset(10, 40);
+    playSound(this, 'crouch');
   }
 
   stopCrouch() {
@@ -258,6 +283,7 @@ export class GameScene extends Phaser.Scene {
     obstacle.setVelocityX(-this.currentSpeed);
     obstacle.setData('label', definition.label);
     obstacle.setData('requiredAction', definition.action);
+    obstacle.setData('passed', false);
 
     const safeGap = Phaser.Math.Between(
       GAMEPLAY.obstacleGapMin,
@@ -275,6 +301,10 @@ export class GameScene extends Phaser.Scene {
     const previousHighScore = this.highScore;
     this.highScore = writeHighScore(this.score);
     this.isNewRecord = this.score > previousHighScore;
+    playSound(this, 'gameOver');
+    if (this.isNewRecord) {
+      playSound(this, 'record', { delay: 0.4 });
+    }
     this.physics.pause();
     this.player.anims.stop();
     this.player.setTint(0xd7dce0);
@@ -387,8 +417,13 @@ export class GameScene extends Phaser.Scene {
       buttonShadow.setScale(1);
     });
     restartButton.once('pointerdown', () => {
+      playSound(this, 'start');
       this.scene.restart();
     });
+  }
+
+  updateSoundStatus() {
+    this.soundStatusText?.setText(isSoundEnabled() ? '音效  开' : '音效  关');
   }
 
   updatePlayerVisuals() {
@@ -408,6 +443,11 @@ export class GameScene extends Phaser.Scene {
   }
 
   update(_time, delta) {
+    if (Phaser.Input.Keyboard.JustDown(this.mKey)) {
+      toggleSound(this);
+      this.updateSoundStatus();
+    }
+
     if (this.runState !== 'playing') {
       return;
     }
@@ -434,6 +474,13 @@ export class GameScene extends Phaser.Scene {
 
     this.scoreText.setText(String(this.score));
     this.highScoreText.setText(`最高\n${Math.max(this.highScore, this.score)}`);
+    const scoreMilestone = Math.floor(this.score / 100);
+    if (scoreMilestone > this.lastScoreMilestone) {
+      this.lastScoreMilestone = scoreMilestone;
+      if (scoreMilestone > 0) {
+        playSound(this, 'milestone');
+      }
+    }
     const speedProgress =
       (this.currentSpeed - GAMEPLAY.initialSpeed) /
       (GAMEPLAY.maxSpeed - GAMEPLAY.initialSpeed);
@@ -463,6 +510,14 @@ export class GameScene extends Phaser.Scene {
           this.endGame();
           return;
         }
+      }
+
+      if (
+        !obstacle.getData('passed') &&
+        obstacle.body.right < this.player.body.left
+      ) {
+        obstacle.setData('passed', true);
+        playSound(this, 'pass');
       }
 
       obstacle.setVelocityX(-this.currentSpeed);
