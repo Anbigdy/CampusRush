@@ -25,6 +25,7 @@ import {
   getObstaclePresentationObjects,
   updateObstaclePresentation,
 } from '../gameplayPresentation.js';
+import { SnowPeakEvent } from '../snowPeakEvent.js';
 import { readHighScore, writeHighScore } from '../storage.js';
 import {
   isSoundEnabled,
@@ -67,6 +68,9 @@ export class GameScene extends Phaser.Scene {
     this.lastObstacleKey = null;
     this.lastScoreMilestone = Math.floor(this.score / 100);
     this.storyTriggered = this.isIsekaiWorld;
+    this.extraLives = 0;
+    this.extraLifeGraceRemaining = 0;
+    this.snowPeakEvent = null;
     this.obstacleDefinitions = this.isIsekaiWorld
       ? ISEKAI_OBSTACLES
       : OBSTACLES;
@@ -82,6 +86,7 @@ export class GameScene extends Phaser.Scene {
     this.createHud();
     this.createPowerUps();
     this.createPlatformRoutes();
+    this.createSnowPeakEvent();
     this.createInput();
     this.setMobileControlsVisible(true);
 
@@ -150,6 +155,66 @@ export class GameScene extends Phaser.Scene {
         this.spawnRouteHazard(x, surfaceY, routeId, variant),
       onRouteComplete: (points, pattern) =>
         this.handleRouteComplete(points, pattern),
+    });
+  }
+
+  createSnowPeakEvent() {
+    if (!this.isIsekaiWorld) {
+      return;
+    }
+
+    this.snowPeakEvent = new SnowPeakEvent(this, {
+      player: this.player,
+      obstacles: this.obstacles,
+      deflectObstacle: (obstacle) => this.deflectObstacle(obstacle, true),
+      pauseGame: () => this.pauseForSnowPeak(),
+      resumeGame: () => this.resumeAfterSnowPeak(),
+      grantExtraLife: () => this.grantExtraLife(),
+    });
+  }
+
+  pauseForSnowPeak() {
+    if (this.runState !== 'playing') {
+      return;
+    }
+    this.stopCrouch();
+    this.stopFastFall();
+    this.runState = 'snowPeakCutscene';
+    this.setMobileControlsVisible(false);
+    this.physics.pause();
+    this.player.anims.pause();
+  }
+
+  resumeAfterSnowPeak() {
+    if (this.runState !== 'snowPeakCutscene') {
+      return;
+    }
+    this.physics.resume();
+    this.runState = 'playing';
+    this.setMobileControlsVisible(true);
+    this.player.anims.resume();
+  }
+
+  grantExtraLife() {
+    this.extraLives = 1;
+    this.powerUps.showToast('念张师：额外生命 +1');
+  }
+
+  useExtraLife(obstacle) {
+    this.extraLives -= 1;
+    this.extraLifeGraceRemaining = 1.8;
+    this.snowPeakEvent?.markExtraLifeConsumed();
+    this.deflectObstacle(obstacle, true);
+    playSound(this, 'extraLife');
+    this.cameras.main.flash(180, 255, 238, 207);
+    this.powerUps.showToast('念张师发动：保住一命！');
+    this.tweens.add({
+      targets: this.player,
+      alpha: 0.35,
+      duration: 120,
+      yoyo: true,
+      repeat: 5,
+      onComplete: () => this.player?.setAlpha(1),
     });
   }
 
@@ -628,6 +693,11 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
+    if (this.extraLifeGraceRemaining > 0) {
+      this.deflectObstacle(obstacle, true);
+      return;
+    }
+
     if (this.powerUps.isRushProtected()) {
       const isScoringRush = this.powerUps.isActive('rush');
       this.deflectObstacle(obstacle, true);
@@ -640,6 +710,11 @@ export class GameScene extends Phaser.Scene {
 
     if (this.powerUps.consumeShield()) {
       this.deflectObstacle(obstacle, false);
+      return;
+    }
+
+    if (this.extraLives > 0) {
+      this.useExtraLife(obstacle);
       return;
     }
 
@@ -1095,6 +1170,10 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.powerUps.updateTimers(safeDeltaSeconds);
+    this.extraLifeGraceRemaining = Math.max(
+      0,
+      this.extraLifeGraceRemaining - safeDeltaSeconds,
+    );
 
     this.platformRoutes.update(
       safeDeltaSeconds,
@@ -1166,6 +1245,11 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.powerUps.updatePickups(safeDeltaSeconds, this.effectiveSpeed);
+    this.snowPeakEvent?.update(
+      safeDeltaSeconds,
+      this.effectiveSpeed,
+      this.score,
+    );
 
     this.obstacles.children.iterate((obstacle) => {
       if (!obstacle?.active) {
@@ -1206,6 +1290,8 @@ export class GameScene extends Phaser.Scene {
 
   shutdown() {
     this.setMobileControlsVisible(false);
+    this.snowPeakEvent?.destroy();
+    this.snowPeakEvent = null;
     this.platformRoutes?.destroy();
     if (this.pointerJumpHandler) {
       this.input.off('pointerdown', this.pointerJumpHandler);

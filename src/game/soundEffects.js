@@ -70,6 +70,24 @@ const SOUND_LIBRARY = Object.freeze({
     { frequency: 659, duration: 0.18, delay: 0.26, type: 'sine', volume: 0.036 },
     { frequency: 988, duration: 0.32, delay: 0.4, type: 'triangle', volume: 0.028 },
   ],
+  snowPeakTalk: [
+    { frequency: 260, endFrequency: 440, duration: 0.08, type: 'square', volume: 0.026 },
+    { frequency: 620, endFrequency: 760, duration: 0.07, delay: 0.055, type: 'triangle', volume: 0.024 },
+  ],
+  snowPeakImpact: [
+    { frequency: 170, endFrequency: 58, duration: 0.16, type: 'sawtooth', volume: 0.043 },
+    { frequency: 90, endFrequency: 46, duration: 0.2, type: 'square', volume: 0.026 },
+  ],
+  snowPeakTired: [
+    { frequency: 420, endFrequency: 155, duration: 0.42, type: 'triangle', volume: 0.032 },
+    { frequency: 220, endFrequency: 110, duration: 0.34, delay: 0.22, type: 'sine', volume: 0.028 },
+  ],
+  extraLife: [
+    { frequency: 523, duration: 0.09, type: 'sine', volume: 0.034 },
+    { frequency: 659, duration: 0.1, delay: 0.08, type: 'triangle', volume: 0.036 },
+    { frequency: 880, duration: 0.12, delay: 0.16, type: 'sine', volume: 0.038 },
+    { frequency: 1175, duration: 0.2, delay: 0.25, type: 'sine', volume: 0.033 },
+  ],
   gameOver: [
     { frequency: 300, endFrequency: 145, duration: 0.34, type: 'sawtooth', volume: 0.04 },
     { frequency: 190, endFrequency: 90, duration: 0.3, delay: 0.11, type: 'triangle', volume: 0.035 },
