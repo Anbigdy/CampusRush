@@ -13,6 +13,37 @@
   <body>
     <main class="app-shell">
       <div class="game-frame" aria-label="Campus Rush 游戏区域">
+        <section
+          class="game-loader"
+          data-game-loader
+          aria-label="游戏加载中"
+        >
+          <div class="game-loader__alarm">08:29 · 早八预警</div>
+          <div class="game-loader__mark" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <p class="game-loader__eyebrow">CAMPUS RUSH</p>
+          <h1 class="game-loader__title">校园冲刺</h1>
+          <div
+            class="game-loader__track"
+            data-game-loader-progress
+            role="progressbar"
+            aria-label="游戏加载进度"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-valuenow="8"
+          >
+            <div class="game-loader__fill">
+              <span class="game-loader__runner" aria-hidden="true">→</span>
+            </div>
+          </div>
+          <div class="game-loader__meta">
+            <span data-game-loader-status>正在赶往教学楼…</span>
+            <strong data-game-loader-percent>8%</strong>
+          </div>
+        </section>
         <div id="game"></div>
       </div>
       <nav
