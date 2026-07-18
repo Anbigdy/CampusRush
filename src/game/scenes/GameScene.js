@@ -37,6 +37,8 @@ export class GameScene extends Phaser.Scene {
     this.pointerJumpHandler = null;
     this.isNewRecord = false;
     this.isCrouching = false;
+    this.isFastFalling = false;
+    this.jumpCount = 0;
     this.lastObstacleKey = null;
     this.lastScoreMilestone = 0;
   }
@@ -167,14 +169,14 @@ export class GameScene extends Phaser.Scene {
       .setDepth(22);
 
     this.add
-      .rectangle(938, 40, 354, 44, COLORS.navyDark, 0.86)
+      .rectangle(938, 40, 430, 44, COLORS.navyDark, 0.86)
       .setOrigin(1, 0.5)
       .setStrokeStyle(2, COLORS.white, 0.8)
       .setDepth(20);
     this.add
-      .text(919, 40, 'SPACE / ↑ 跳跃  ·  ↓ / S 下蹲  ·  M 音效', {
+      .text(919, 40, 'SPACE / ↑ / 点击：二段跳  ·  ↓ / S：下蹲 / 下坠', {
         fontFamily: FONT_FAMILY,
-        fontSize: '13px',
+        fontSize: '12px',
         fontStyle: 'bold',
         color: '#fff7e3',
       })
@@ -182,7 +184,7 @@ export class GameScene extends Phaser.Scene {
       .setDepth(21);
 
     this.add
-      .rectangle(938, 83, 104, 28, COLORS.cream, 0.95)
+      .rectangle(938, 83, 190, 28, COLORS.cream, 0.95)
       .setOrigin(1, 0.5)
       .setStrokeStyle(2, COLORS.navy, 0.72)
       .setDepth(20);
@@ -195,7 +197,7 @@ export class GameScene extends Phaser.Scene {
       })
       .setOrigin(1, 0.5)
       .setDepth(21);
-    this.updateSoundStatus();
+    this.updatePlayerStatus();
   }
 
   createInput() {
@@ -211,21 +213,30 @@ export class GameScene extends Phaser.Scene {
     if (
       this.runState !== 'playing' ||
       !this.player?.active ||
-      this.isCrouching
+      this.isCrouching ||
+      this.isFastFalling
     ) {
       return;
     }
 
     const isOnGround =
       this.player.body.blocked.down || this.player.body.touching.down;
-    if (!isOnGround) {
+    if (isOnGround) {
+      this.jumpCount = 0;
+    }
+    if (this.jumpCount >= GAMEPLAY.maxJumps) {
       return;
     }
 
+    this.jumpCount += 1;
+    const isDoubleJump = this.jumpCount === GAMEPLAY.maxJumps;
     this.player.play(PLAYER_SKIN.jumpAnimationKey, true);
     this.player.setAngle(0);
-    this.player.setVelocityY(GAMEPLAY.jumpVelocity);
-    playSound(this, 'jump');
+    this.player.setVelocityY(
+      isDoubleJump ? GAMEPLAY.doubleJumpVelocity : GAMEPLAY.jumpVelocity,
+    );
+    playSound(this, isDoubleJump ? 'doubleJump' : 'jump');
+    this.updatePlayerStatus();
   }
 
   startCrouch() {
@@ -239,10 +250,48 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.isCrouching = true;
+    this.isFastFalling = false;
     this.player.anims.pause();
     this.player.setAngle(0);
     applyCrouchingPlayerShape(this.player);
     playSound(this, 'crouch');
+  }
+
+  startFastFall() {
+    if (
+      this.runState !== 'playing' ||
+      this.isFastFalling ||
+      !this.player?.active
+    ) {
+      return;
+    }
+
+    const isOnGround =
+      this.player.body.blocked.down || this.player.body.touching.down;
+    if (isOnGround) {
+      return;
+    }
+
+    this.isFastFalling = true;
+    this.isCrouching = false;
+    this.jumpCount = GAMEPLAY.maxJumps;
+    this.player.anims.pause();
+    this.player.setAngle(0);
+    applyCrouchingPlayerShape(this.player);
+    this.player.setVelocityY(
+      Math.max(this.player.body.velocity.y, GAMEPLAY.fastFallVelocity),
+    );
+    playSound(this, 'fastFall');
+    this.updatePlayerStatus();
+  }
+
+  stopFastFall() {
+    if (!this.isFastFalling) {
+      return;
+    }
+
+    this.isFastFalling = false;
+    applyNormalPlayerShape(this.player);
   }
 
   stopCrouch() {
@@ -263,10 +312,28 @@ export class GameScene extends Phaser.Scene {
     const wantsToCrouch = this.cursors.down.isDown || this.sKey.isDown;
     const isOnGround = this.player.body.blocked.down || this.player.body.touching.down;
 
-    if (wantsToCrouch && isOnGround) {
-      this.startCrouch();
-    } else if (!wantsToCrouch || !isOnGround) {
-      this.stopCrouch();
+    if (isOnGround) {
+      const shouldRefreshStatus =
+        this.jumpCount !== 0 || this.isFastFalling;
+      this.jumpCount = 0;
+
+      if (wantsToCrouch) {
+        this.isFastFalling = false;
+        this.startCrouch();
+      } else {
+        this.stopFastFall();
+        this.stopCrouch();
+      }
+
+      if (shouldRefreshStatus) {
+        this.updatePlayerStatus();
+      }
+      return;
+    }
+
+    this.stopCrouch();
+    if (wantsToCrouch) {
+      this.startFastFall();
     }
   }
 
@@ -504,8 +571,14 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  updateSoundStatus() {
-    this.soundStatusText?.setText(isSoundEnabled() ? '音效  开' : '音效  关');
+  updatePlayerStatus() {
+    const jumpsRemaining = Math.max(
+      0,
+      GAMEPLAY.maxJumps - this.jumpCount,
+    );
+    this.soundStatusText?.setText(
+      `剩余跳跃 ${jumpsRemaining}/${GAMEPLAY.maxJumps} · M 音效 ${isSoundEnabled() ? '开' : '关'}`,
+    );
   }
 
   updatePlayerVisuals() {
@@ -530,7 +603,7 @@ export class GameScene extends Phaser.Scene {
   update(_time, delta) {
     if (Phaser.Input.Keyboard.JustDown(this.mKey)) {
       toggleSound(this);
-      this.updateSoundStatus();
+      this.updatePlayerStatus();
     }
 
     if (this.runState !== 'playing') {
@@ -610,7 +683,9 @@ export class GameScene extends Phaser.Scene {
         const reachesPlayer =
           obstacle.body.left < this.player.body.right &&
           obstacle.body.right > this.player.body.left;
-        if (reachesPlayer && !this.isCrouching) {
+        const isLowObstacleDodge =
+          this.isCrouching || this.isFastFalling;
+        if (reachesPlayer && !isLowObstacleDodge) {
           this.handleObstacleCollision(this.player, obstacle);
           return;
         }

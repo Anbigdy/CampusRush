@@ -149,7 +149,7 @@ export class MenuScene extends Phaser.Scene {
       .setDepth(12);
 
     this.add
-      .text(480, 209, '跳跃与下蹲避障，收集技能与金币！', {
+      .text(480, 209, '二段跳越过高障碍，空中下蹲快速下坠！', {
         fontFamily: FONT_FAMILY,
         fontSize: '21px',
         fontStyle: 'bold',
@@ -159,7 +159,7 @@ export class MenuScene extends Phaser.Scene {
       .setDepth(12);
 
     this.add
-      .text(350, 246, '跳跃操作', {
+      .text(330, 246, '跳跃 / 二段', {
         fontFamily: FONT_FAMILY,
         fontSize: '15px',
         fontStyle: 'bold',
@@ -173,7 +173,7 @@ export class MenuScene extends Phaser.Scene {
     this.createKeyChip(620, 246, '点击', 72);
 
     this.add
-      .text(350, 286, '下蹲操作', {
+      .text(330, 286, '下蹲 / 下坠', {
         fontFamily: FONT_FAMILY,
         fontSize: '15px',
         fontStyle: 'bold',

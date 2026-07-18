@@ -345,6 +345,61 @@ export function createGameTextures(scene) {
     graphics.lineBetween(8, 3, 8, 12);
   });
 
+  saveTexture(scene, 'obstacle-stacked-crates', 92, 154, (graphics) => {
+    graphics.fillStyle(0x173c59, 0.2);
+    graphics.fillEllipse(46, 150, 90, 8);
+
+    const drawCrate = (x, y, width, height, color) => {
+      graphics.fillStyle(color, 1);
+      graphics.fillRoundedRect(x, y, width, height, 5);
+      graphics.lineStyle(3, 0x684b35, 0.82);
+      graphics.strokeRoundedRect(x, y, width, height, 5);
+      graphics.lineBetween(x + 7, y + 7, x + width - 7, y + height - 7);
+      graphics.lineBetween(x + width - 7, y + 7, x + 7, y + height - 7);
+    };
+
+    drawCrate(2, 104, 88, 48, 0xc28a52);
+    drawCrate(12, 56, 68, 48, 0xd7a260);
+    drawCrate(24, 10, 48, 46, 0xe0b16e);
+
+    graphics.fillStyle(COLORS.cream, 1);
+    graphics.fillTriangle(46, 16, 35, 31, 57, 31);
+    graphics.fillTriangle(46, 34, 37, 46, 55, 46);
+  });
+
+  saveTexture(scene, 'obstacle-book-cart', 108, 148, (graphics) => {
+    graphics.fillStyle(0x173c59, 0.2);
+    graphics.fillEllipse(54, 144, 104, 8);
+    graphics.fillStyle(0x315870, 1);
+    graphics.fillRoundedRect(7, 102, 94, 31, 7);
+    graphics.fillStyle(0x203f55, 1);
+    graphics.fillCircle(25, 137, 9);
+    graphics.fillCircle(83, 137, 9);
+    graphics.fillStyle(0xdde9ec, 1);
+    graphics.fillCircle(25, 137, 4);
+    graphics.fillCircle(83, 137, 4);
+
+    const bookColors = [COLORS.coral, COLORS.orange, 0x4ca7d8, 0x62b85f];
+    [
+      [13, 83, 78, 19],
+      [20, 63, 72, 19],
+      [11, 43, 68, 19],
+      [27, 23, 66, 19],
+      [19, 3, 58, 19],
+    ].forEach(([x, y, width, height], index) => {
+      graphics.fillStyle(bookColors[index % bookColors.length], 1);
+      graphics.fillRoundedRect(x, y, width, height, 4);
+      graphics.fillStyle(COLORS.cream, 0.95);
+      graphics.fillRect(x + 7, y + 5, width - 13, height - 9);
+      graphics.fillStyle(bookColors[index % bookColors.length], 1);
+      graphics.fillRect(x + 4, y + 3, 5, height - 6);
+    });
+
+    graphics.fillStyle(COLORS.navy, 1);
+    graphics.fillTriangle(87, 8, 78, 20, 96, 20);
+    graphics.fillTriangle(87, 25, 80, 35, 94, 35);
+  });
+
   saveTexture(scene, 'obstacle-basketball', 56, 36, (graphics) => {
     graphics.lineStyle(3, 0xffc66b, 0.72);
     graphics.lineBetween(35, 10, 54, 10);

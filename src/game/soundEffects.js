@@ -10,8 +10,15 @@ const SOUND_LIBRARY = Object.freeze({
     { frequency: 320, endFrequency: 660, duration: 0.13, type: 'square', volume: 0.028 },
     { frequency: 690, endFrequency: 820, duration: 0.07, delay: 0.055, type: 'sine', volume: 0.025 },
   ],
+  doubleJump: [
+    { frequency: 480, endFrequency: 880, duration: 0.12, type: 'square', volume: 0.025 },
+    { frequency: 880, endFrequency: 1180, duration: 0.1, delay: 0.045, type: 'sine', volume: 0.03 },
+  ],
   crouch: [
     { frequency: 230, endFrequency: 115, duration: 0.11, type: 'triangle', volume: 0.04 },
+  ],
+  fastFall: [
+    { frequency: 310, endFrequency: 90, duration: 0.16, type: 'sawtooth', volume: 0.028 },
   ],
   pass: [
     { frequency: 720, endFrequency: 980, duration: 0.075, type: 'sine', volume: 0.024 },
