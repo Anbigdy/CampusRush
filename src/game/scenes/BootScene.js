@@ -12,27 +12,64 @@ import {
   prepareSnowPeak,
 } from '../snowPeakEvent.js';
 
+const ASSET_PROGRESS_START = 0.18;
+const ASSET_PROGRESS_SPAN = 0.74;
+
+function getDetailedLoadProgress(progressByFile, totalToLoad) {
+  if (!totalToLoad) {
+    return 0;
+  }
+
+  const partialProgress = [...progressByFile.values()].reduce(
+    (sum, progress) => sum + progress,
+    0,
+  );
+  return Phaser.Math.Clamp(partialProgress / totalToLoad, 0, 1);
+}
+
+function getFileStatus(file) {
+  if (file.percentComplete >= 0.995) {
+    return '正在处理已下载素材…';
+  }
+  if (file.key === 'campus-rush-theme') {
+    return '正在调试随身听…';
+  }
+  if (file.key === SNOW_PEAK.textureKey) {
+    return '正在寻找 Snow Peak…';
+  }
+  return '正在叫醒主角…';
+}
+
 export class BootScene extends Phaser.Scene {
   constructor() {
     super('BootScene');
   }
 
   preload() {
-    updateLoadingScreen(0.18, '正在整理书包…');
+    const progressByFile = new Map();
+    updateLoadingScreen(ASSET_PROGRESS_START, '正在整理书包…');
     this.load.on('progress', (progress) => {
-      updateLoadingScreen(0.18 + progress * 0.7, '正在装载校园素材…');
+      const detailedProgress = Math.max(
+        progress,
+        getDetailedLoadProgress(progressByFile, this.load.totalToLoad),
+      );
+      updateLoadingScreen(
+        ASSET_PROGRESS_START + detailedProgress * ASSET_PROGRESS_SPAN,
+      );
     });
-    this.load.on('fileprogress', (file) => {
-      let status = '正在叫醒主角…';
-      if (file.key === 'campus-rush-theme') {
-        status = '正在调试随身听…';
-      } else if (file.key === SNOW_PEAK.textureKey) {
-        status = '正在寻找 Snow Peak…';
-      }
-      updateLoadingScreen(0.82, status);
+    this.load.on('fileprogress', (file, percentComplete) => {
+      progressByFile.set(file.key, percentComplete);
+      const detailedProgress = getDetailedLoadProgress(
+        progressByFile,
+        this.load.totalToLoad,
+      );
+      updateLoadingScreen(
+        ASSET_PROGRESS_START + detailedProgress * ASSET_PROGRESS_SPAN,
+        getFileStatus(file),
+      );
     });
     this.load.once('complete', () => {
-      updateLoadingScreen(0.92, '正在布置校园…');
+      updateLoadingScreen(0.94, '正在布置校园…');
     });
     loadPlayerSkin(this);
     loadBackgroundMusic(this);
@@ -40,6 +77,7 @@ export class BootScene extends Phaser.Scene {
   }
 
   create() {
+    updateLoadingScreen(0.97, '正在生成跑道…');
     createGameTextures(this);
     preparePlayerSkin(this);
     prepareSnowPeak(this);
