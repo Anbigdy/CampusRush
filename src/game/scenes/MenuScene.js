@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { syncBackgroundMusic } from '../backgroundMusic.js';
 import { COLORS, GAMEPLAY } from '../constants.js';
 import {
   createCampusBackdrop,
@@ -114,14 +115,15 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setDepth(13);
     const updateLabel = () => {
-      label.setText(`音效  ${isSoundEnabled() ? '开' : '关'}`);
+      label.setText(`声音  ${isSoundEnabled() ? '开' : '关'}`);
     };
 
     updateLabel();
     button.on('pointerover', () => button.setFillStyle(0xffffff, 1));
     button.on('pointerout', () => button.setFillStyle(COLORS.cream, 0.96));
     button.on('pointerdown', () => {
-      toggleSound(this);
+      const enabled = toggleSound(this);
+      syncBackgroundMusic(this, enabled);
       updateLabel();
     });
   }
@@ -260,6 +262,7 @@ export class MenuScene extends Phaser.Scene {
         return;
       }
       this.hasStarted = true;
+      syncBackgroundMusic(this, isSoundEnabled());
       playSound(this, 'start');
       this.scene.start('GameScene');
     });

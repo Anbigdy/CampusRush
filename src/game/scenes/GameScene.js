@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { syncBackgroundMusic } from '../backgroundMusic.js';
 import { COLORS, GAMEPLAY, OBSTACLES } from '../constants.js';
 import {
   createCampusBackdrop,
@@ -169,14 +170,14 @@ export class GameScene extends Phaser.Scene {
       .setDepth(22);
 
     this.add
-      .rectangle(938, 40, 430, 44, COLORS.navyDark, 0.86)
+      .rectangle(938, 40, 520, 44, COLORS.navyDark, 0.86)
       .setOrigin(1, 0.5)
       .setStrokeStyle(2, COLORS.white, 0.8)
       .setDepth(20);
     this.add
-      .text(919, 40, 'SPACE / ↑ / 点击：二段跳  ·  ↓ / S：下蹲 / 下坠', {
+      .text(919, 40, 'SPACE / ↑ / 点击：二段跳  ·  ↓ / S：下蹲 / 下坠  ·  M：声音', {
         fontFamily: FONT_FAMILY,
-        fontSize: '12px',
+        fontSize: '11px',
         fontStyle: 'bold',
         color: '#fff7e3',
       })
@@ -184,7 +185,7 @@ export class GameScene extends Phaser.Scene {
       .setDepth(21);
 
     this.add
-      .rectangle(938, 83, 190, 28, COLORS.cream, 0.95)
+      .rectangle(938, 83, 250, 28, COLORS.cream, 0.95)
       .setOrigin(1, 0.5)
       .setStrokeStyle(2, COLORS.navy, 0.72)
       .setDepth(20);
@@ -577,7 +578,7 @@ export class GameScene extends Phaser.Scene {
       GAMEPLAY.maxJumps - this.jumpCount,
     );
     this.soundStatusText?.setText(
-      `剩余跳跃 ${jumpsRemaining}/${GAMEPLAY.maxJumps} · M 音效 ${isSoundEnabled() ? '开' : '关'}`,
+      `剩余跳跃 ${jumpsRemaining}/${GAMEPLAY.maxJumps} · M 声音 ${isSoundEnabled() ? '开' : '关'}`,
     );
   }
 
@@ -602,7 +603,8 @@ export class GameScene extends Phaser.Scene {
 
   update(_time, delta) {
     if (Phaser.Input.Keyboard.JustDown(this.mKey)) {
-      toggleSound(this);
+      const enabled = toggleSound(this);
+      syncBackgroundMusic(this, enabled);
       this.updatePlayerStatus();
     }
 
