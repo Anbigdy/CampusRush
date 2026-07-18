@@ -4,6 +4,7 @@ import {
   createCampusBackdrop,
   scrollCampusBackdrop,
 } from '../sceneVisuals.js';
+import { PLAYER_SKIN } from '../playerSkin.js';
 import { readHighScore } from '../storage.js';
 
 const FONT_FAMILY = 'Arial, "Microsoft YaHei", sans-serif';
@@ -38,8 +39,9 @@ export class MenuScene extends Phaser.Scene {
       .setDepth(13);
 
     this.add
-      .sprite(128, 397, 'player-run-1')
-      .setScale(1.5)
+      .sprite(128, 450, PLAYER_SKIN.textureKey, PLAYER_SKIN.idleFrame)
+      .setOrigin(0.5, 1)
+      .setScale(PLAYER_SKIN.baseScale * 1.5)
       .setDepth(8);
     this.add.ellipse(128, 446, 78, 13, COLORS.navyDark, 0.18).setDepth(6);
 

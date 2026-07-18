@@ -4,6 +4,11 @@ import {
   createCampusBackdrop,
   scrollCampusBackdrop,
 } from '../sceneVisuals.js';
+import {
+  PLAYER_SKIN,
+  applyCrouchingPlayerShape,
+  applyNormalPlayerShape,
+} from '../playerSkin.js';
 import { readHighScore, writeHighScore } from '../storage.js';
 
 const FONT_FAMILY = 'Arial, "Microsoft YaHei", sans-serif';
@@ -43,29 +48,20 @@ export class GameScene extends Phaser.Scene {
   }
 
   createPlayer() {
-    if (!this.anims.exists('student-run')) {
-      this.anims.create({
-        key: 'student-run',
-        frames: [{ key: 'player-run-1' }, { key: 'player-run-2' }],
-        frameRate: 8,
-        repeat: -1,
-      });
-    }
-
-    const playerY = GAMEPLAY.groundY - GAMEPLAY.playerHeight / 2;
     this.playerShadow = this.add
       .ellipse(GAMEPLAY.playerX, GAMEPLAY.groundY - 3, 56, 12, COLORS.navyDark, 0.2)
       .setDepth(6);
     this.player = this.physics.add.sprite(
       GAMEPLAY.playerX,
-      playerY,
-      'player-run-1',
+      GAMEPLAY.groundY,
+      PLAYER_SKIN.textureKey,
+      PLAYER_SKIN.runFrames.start,
     );
+    this.player.setOrigin(0.5, 1);
     this.player.setDepth(8);
     this.player.setCollideWorldBounds(true);
-    this.player.body.setSize(34, 54);
-    this.player.body.setOffset(13, 16);
-    this.player.play('student-run');
+    applyNormalPlayerShape(this.player);
+    this.player.play(PLAYER_SKIN.runAnimationKey);
     this.physics.add.collider(this.player, this.ground);
   }
 
@@ -187,9 +183,8 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    this.player.anims.stop();
-    this.player.setTexture('player-jump');
-    this.player.setAngle(-4);
+    this.player.play(PLAYER_SKIN.jumpAnimationKey, true);
+    this.player.setAngle(0);
     this.player.setVelocityY(GAMEPLAY.jumpVelocity);
   }
 
@@ -204,11 +199,9 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.isCrouching = true;
-    this.player.anims.stop();
-    this.player.setTexture('player-crouch');
+    this.player.anims.pause();
     this.player.setAngle(0);
-    this.player.body.setSize(40, 30);
-    this.player.body.setOffset(10, 40);
+    applyCrouchingPlayerShape(this.player);
   }
 
   stopCrouch() {
@@ -217,12 +210,11 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.isCrouching = false;
-    this.player.body.setSize(34, 54);
-    this.player.body.setOffset(13, 16);
+    applyNormalPlayerShape(this.player);
 
     const isOnGround = this.player.body.blocked.down || this.player.body.touching.down;
     if (isOnGround && this.runState === 'playing') {
-      this.player.play('student-run');
+      this.player.play(PLAYER_SKIN.runAnimationKey, true);
     }
   }
 
@@ -393,15 +385,17 @@ export class GameScene extends Phaser.Scene {
 
   updatePlayerVisuals() {
     const isOnGround = this.player.body.blocked.down || this.player.body.touching.down;
-    if (isOnGround && !this.isCrouching && !this.player.anims.isPlaying) {
+    if (
+      isOnGround &&
+      !this.isCrouching &&
+      (this.player.anims.currentAnim?.key !== PLAYER_SKIN.runAnimationKey ||
+        !this.player.anims.isPlaying)
+    ) {
       this.player.setAngle(0);
-      this.player.play('student-run');
+      this.player.play(PLAYER_SKIN.runAnimationKey, true);
     }
 
-    const rise = Math.max(
-      0,
-      GAMEPLAY.groundY - (this.player.y + GAMEPLAY.playerHeight / 2),
-    );
+    const rise = Math.max(0, GAMEPLAY.groundY - this.player.y);
     const shadowScale = Phaser.Math.Clamp(1 - rise / 230, 0.52, 1);
     this.playerShadow.setScale(shadowScale, shadowScale);
     this.playerShadow.setAlpha(0.2 * shadowScale + 0.04);
