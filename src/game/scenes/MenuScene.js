@@ -123,7 +123,7 @@ export class MenuScene extends Phaser.Scene {
       .setDepth(12);
 
     this.add
-      .text(350, 255, '跳跃操作', {
+      .text(350, 246, '跳跃操作', {
         fontFamily: FONT_FAMILY,
         fontSize: '15px',
         fontStyle: 'bold',
@@ -132,18 +132,23 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0, 0.5)
       .setDepth(12);
 
-    this.createKeyChip(452, 255, 'SPACE', 84);
-    this.createKeyChip(544, 255, '↑', 52);
-    this.createKeyChip(620, 255, '点击', 72);
+    this.createKeyChip(452, 246, 'SPACE', 84);
+    this.createKeyChip(544, 246, '↑', 52);
+    this.createKeyChip(620, 246, '点击', 72);
 
     this.add
-      .text(480, 291, '落地后才能再次起跳，把握节奏最重要', {
+      .text(350, 286, '下蹲操作', {
         fontFamily: FONT_FAMILY,
         fontSize: '15px',
-        color: '#557384',
+        fontStyle: 'bold',
+        color: '#53758a',
       })
-      .setOrigin(0.5)
+      .setOrigin(0, 0.5)
       .setDepth(12);
+
+    this.createKeyChip(452, 286, '↓', 52);
+    this.createKeyChip(516, 286, 'S', 52);
+    this.createKeyChip(596, 286, '按住', 80);
 
     this.add
       .rectangle(480, 331, 244, 42, COLORS.navy, 1)

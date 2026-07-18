@@ -22,6 +22,7 @@ export class GameScene extends Phaser.Scene {
     this.distanceToNextObstacle = GAMEPLAY.initialSpawnDistance;
     this.pointerJumpHandler = null;
     this.isNewRecord = false;
+    this.isCrouching = false;
   }
 
   create() {
@@ -153,7 +154,7 @@ export class GameScene extends Phaser.Scene {
       .setStrokeStyle(2, COLORS.white, 0.8)
       .setDepth(20);
     this.add
-      .text(919, 40, 'SPACE   ↑   点击画面  ·  跳跃', {
+      .text(919, 40, 'SPACE / ↑ 跳跃   ·   ↓ / S 下蹲', {
         fontFamily: FONT_FAMILY,
         fontSize: '14px',
         fontStyle: 'bold',
@@ -166,12 +167,17 @@ export class GameScene extends Phaser.Scene {
   createInput() {
     this.cursors = this.input.keyboard.createCursorKeys();
     this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+    this.sKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S);
     this.pointerJumpHandler = () => this.tryJump();
     this.input.on('pointerdown', this.pointerJumpHandler);
   }
 
   tryJump() {
-    if (this.runState !== 'playing' || !this.player?.active) {
+    if (
+      this.runState !== 'playing' ||
+      !this.player?.active ||
+      this.isCrouching
+    ) {
       return;
     }
 
@@ -186,10 +192,57 @@ export class GameScene extends Phaser.Scene {
     this.player.setVelocityY(GAMEPLAY.jumpVelocity);
   }
 
+  startCrouch() {
+    if (this.runState !== 'playing' || this.isCrouching) {
+      return;
+    }
+
+    const isOnGround = this.player.body.blocked.down || this.player.body.touching.down;
+    if (!isOnGround) {
+      return;
+    }
+
+    this.isCrouching = true;
+    this.player.anims.stop();
+    this.player.setTexture('player-crouch');
+    this.player.setAngle(0);
+    this.player.body.setSize(40, 30);
+    this.player.body.setOffset(10, 40);
+  }
+
+  stopCrouch() {
+    if (!this.isCrouching) {
+      return;
+    }
+
+    this.isCrouching = false;
+    this.player.body.setSize(34, 54);
+    this.player.body.setOffset(13, 16);
+
+    const isOnGround = this.player.body.blocked.down || this.player.body.touching.down;
+    if (isOnGround && this.runState === 'playing') {
+      this.player.play('student-run');
+    }
+  }
+
+  updateCrouchInput() {
+    const wantsToCrouch = this.cursors.down.isDown || this.sKey.isDown;
+    const isOnGround = this.player.body.blocked.down || this.player.body.touching.down;
+
+    if (wantsToCrouch && isOnGround) {
+      this.startCrouch();
+    } else if (!wantsToCrouch || !isOnGround) {
+      this.stopCrouch();
+    }
+  }
+
   spawnObstacle() {
     const definition = Phaser.Utils.Array.GetRandom(OBSTACLES);
     const x = GAMEPLAY.width + 20 + definition.width / 2;
-    const y = GAMEPLAY.groundY - definition.height / 2;
+    const y =
+      definition.placement === 'air'
+        ? definition.y
+        : GAMEPLAY.groundY - definition.height / 2;
     const obstacle = this.obstacles.create(x, y, definition.key);
 
     obstacle.setDepth(7);
@@ -199,6 +252,7 @@ export class GameScene extends Phaser.Scene {
     obstacle.body.setOffset(definition.body.offsetX, definition.body.offsetY);
     obstacle.setVelocityX(-this.currentSpeed);
     obstacle.setData('label', definition.label);
+    obstacle.setData('requiresCrouch', definition.placement === 'air');
 
     const safeGap = Phaser.Math.Between(
       GAMEPLAY.obstacleGapMin,
@@ -334,7 +388,7 @@ export class GameScene extends Phaser.Scene {
 
   updatePlayerVisuals() {
     const isOnGround = this.player.body.blocked.down || this.player.body.touching.down;
-    if (isOnGround && !this.player.anims.isPlaying) {
+    if (isOnGround && !this.isCrouching && !this.player.anims.isPlaying) {
       this.player.setAngle(0);
       this.player.play('student-run');
     }
@@ -352,6 +406,8 @@ export class GameScene extends Phaser.Scene {
     if (this.runState !== 'playing') {
       return;
     }
+
+    this.updateCrouchInput();
 
     if (
       Phaser.Input.Keyboard.JustDown(this.spaceKey) ||

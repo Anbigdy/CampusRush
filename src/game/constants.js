@@ -58,4 +58,13 @@ export const OBSTACLES = Object.freeze([
     height: 18,
     body: { width: 76, height: 10, offsetX: 3, offsetY: 8 },
   },
+  {
+    key: 'obstacle-basketball',
+    label: '飞来的篮球',
+    width: 56,
+    height: 36,
+    placement: 'air',
+    y: 400,
+    body: { width: 30, height: 30, offsetX: 1, offsetY: 3 },
+  },
 ]);

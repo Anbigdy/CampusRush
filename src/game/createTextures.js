@@ -114,6 +114,44 @@ function drawStudent(graphics, pose) {
   graphics.fillRoundedRect(4, 30, 5, 8, 2);
 }
 
+function drawCrouchingStudent(graphics) {
+  graphics.fillStyle(0x284b68, 1);
+  graphics.fillRoundedRect(5, 40, 18, 25, 7);
+  graphics.fillStyle(0x1c344a, 1);
+  graphics.fillRoundedRect(2, 46, 7, 16, 3);
+
+  graphics.lineStyle(8, 0x315a86, 1);
+  graphics.lineBetween(27, 59, 18, 66);
+  graphics.lineBetween(39, 59, 49, 66);
+  graphics.fillStyle(0xffffff, 1);
+  graphics.fillRoundedRect(10, 64, 17, 6, 3);
+  graphics.fillRoundedRect(42, 64, 16, 6, 3);
+
+  graphics.fillStyle(COLORS.cream, 1);
+  graphics.fillRoundedRect(17, 45, 30, 19, 8);
+  graphics.lineStyle(2, COLORS.navy, 0.8);
+  graphics.strokeRoundedRect(17, 45, 30, 19, 8);
+  graphics.fillStyle(COLORS.coral, 1);
+  graphics.fillTriangle(29, 46, 36, 46, 33, 58);
+
+  graphics.lineStyle(7, 0xf1bd98, 1);
+  graphics.lineBetween(19, 49, 11, 58);
+  graphics.lineBetween(45, 49, 53, 58);
+
+  graphics.fillStyle(0xf2c39f, 1);
+  graphics.fillCircle(32, 38, 11);
+  graphics.fillStyle(0x24394b, 1);
+  graphics.fillRoundedRect(21, 29, 23, 9, 6);
+  graphics.fillTriangle(21, 36, 27, 34, 23, 43);
+  graphics.fillCircle(29, 39, 1.4);
+  graphics.fillCircle(37, 39, 1.4);
+  graphics.lineStyle(1.5, 0xb66f63, 1);
+  graphics.lineBetween(30, 44, 36, 44);
+
+  graphics.fillStyle(COLORS.orange, 1);
+  graphics.fillRoundedRect(4, 48, 5, 8, 2);
+}
+
 export function createGameTextures(scene) {
   saveTexture(scene, 'sky-gradient', 32, 450, (graphics) => {
     const bands = [
@@ -134,6 +172,9 @@ export function createGameTextures(scene) {
   });
   saveTexture(scene, 'player-jump', 60, 70, (graphics) => {
     drawStudent(graphics, 'jump');
+  });
+  saveTexture(scene, 'player-crouch', 60, 70, (graphics) => {
+    drawCrouchingStudent(graphics);
   });
 
   saveTexture(scene, 'obstacle-backpack', 52, 44, (graphics) => {
@@ -182,6 +223,23 @@ export function createGameTextures(scene) {
     graphics.strokeEllipse(43, 10, 47, 8);
     graphics.fillStyle(0x7dbb57, 1);
     graphics.fillTriangle(68, 3, 76, 1, 73, 7);
+  });
+
+  saveTexture(scene, 'obstacle-basketball', 56, 36, (graphics) => {
+    graphics.lineStyle(3, 0xffc66b, 0.72);
+    graphics.lineBetween(35, 10, 54, 10);
+    graphics.lineBetween(39, 18, 55, 18);
+    graphics.lineBetween(35, 26, 51, 26);
+    graphics.fillStyle(0xf08a24, 1);
+    graphics.fillCircle(16, 18, 16);
+    graphics.lineStyle(2, 0x7d3e24, 0.9);
+    graphics.strokeCircle(16, 18, 15);
+    graphics.lineBetween(1, 18, 31, 18);
+    graphics.lineBetween(16, 3, 16, 33);
+    graphics.arc(4, 18, 13, -1.1, 1.1);
+    graphics.arc(28, 18, 13, 2.05, 4.25);
+    graphics.fillStyle(0xffbf54, 0.72);
+    graphics.fillCircle(10, 10, 4);
   });
 
   saveTexture(scene, 'ground-tile', 240, 90, (graphics) => {
