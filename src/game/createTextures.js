@@ -177,6 +177,92 @@ export function createGameTextures(scene) {
     drawCrouchingStudent(graphics);
   });
 
+  saveTexture(scene, 'pickup-coin', 30, 30, (graphics) => {
+    graphics.fillStyle(0x7c5320, 0.2);
+    graphics.fillCircle(15, 17, 13);
+    graphics.fillStyle(0xffc83d, 1);
+    graphics.fillCircle(15, 14, 13);
+    graphics.lineStyle(2, 0xd8891f, 1);
+    graphics.strokeCircle(15, 14, 11);
+    graphics.fillStyle(0xfff0a3, 1);
+    graphics.fillCircle(11, 10, 3);
+    graphics.fillStyle(0xe99b22, 1);
+    graphics.fillRoundedRect(13, 7, 4, 14, 2);
+  });
+
+  saveTexture(scene, 'pickup-shield', 46, 46, (graphics) => {
+    graphics.fillStyle(0xffffff, 0.9);
+    graphics.fillCircle(23, 23, 22);
+    graphics.fillStyle(0x4ca7d8, 1);
+    graphics.fillRoundedRect(5, 5, 36, 36, 10);
+    graphics.fillStyle(0xe9f9ff, 1);
+    graphics.fillTriangle(23, 9, 11, 15, 23, 38);
+    graphics.fillTriangle(23, 9, 35, 15, 23, 38);
+    graphics.fillStyle(COLORS.orange, 1);
+    graphics.fillCircle(23, 21, 5);
+  });
+
+  saveTexture(scene, 'pickup-rush', 46, 46, (graphics) => {
+    graphics.fillStyle(0xffffff, 0.92);
+    graphics.fillCircle(23, 23, 22);
+    graphics.fillStyle(0xff8b3d, 1);
+    graphics.fillRoundedRect(7, 7, 32, 32, 9);
+    graphics.fillStyle(COLORS.cream, 1);
+    graphics.fillRoundedRect(12, 19, 19, 13, 4);
+    graphics.lineStyle(4, COLORS.cream, 1);
+    graphics.arc(31, 25, 6, -1.4, 1.4);
+    graphics.lineStyle(2, COLORS.cream, 0.9);
+    graphics.arc(17, 17, 4, 3.4, 5.4);
+    graphics.arc(25, 15, 4, 3.4, 5.4);
+  });
+
+  saveTexture(scene, 'pickup-magnet', 46, 46, (graphics) => {
+    graphics.fillStyle(0xffffff, 0.92);
+    graphics.fillCircle(23, 23, 22);
+    graphics.fillStyle(0x35b98c, 1);
+    graphics.fillRoundedRect(5, 7, 36, 32, 7);
+    graphics.fillStyle(0xdffbf0, 1);
+    graphics.fillRoundedRect(10, 11, 26, 7, 3);
+    graphics.fillStyle(COLORS.navy, 1);
+    graphics.fillRoundedRect(11, 22, 8, 12, 3);
+    graphics.fillRoundedRect(27, 22, 8, 12, 3);
+    graphics.lineStyle(5, COLORS.navy, 1);
+    graphics.arc(23, 23, 10, 0, Math.PI);
+    graphics.fillStyle(COLORS.coral, 1);
+    graphics.fillRect(11, 22, 8, 5);
+    graphics.fillRect(27, 22, 8, 5);
+  });
+
+  saveTexture(scene, 'pickup-double-score', 46, 46, (graphics) => {
+    graphics.fillStyle(0xffffff, 0.92);
+    graphics.fillCircle(23, 23, 22);
+    graphics.fillStyle(0x9b6bd1, 1);
+    graphics.fillRoundedRect(6, 6, 34, 34, 9);
+    graphics.fillStyle(COLORS.cream, 1);
+    graphics.fillRoundedRect(10, 11, 12, 24, 3);
+    graphics.fillRoundedRect(24, 11, 12, 24, 3);
+    graphics.lineStyle(2, 0xd9c1f2, 1);
+    graphics.lineBetween(23, 12, 23, 35);
+    graphics.fillStyle(COLORS.orange, 1);
+    graphics.fillCircle(16, 22, 3);
+    graphics.fillCircle(30, 22, 3);
+  });
+
+  saveTexture(scene, 'pickup-double-jump', 46, 46, (graphics) => {
+    graphics.fillStyle(0xffffff, 0.92);
+    graphics.fillCircle(23, 23, 22);
+    graphics.fillStyle(0x3bbd74, 1);
+    graphics.fillRoundedRect(5, 6, 36, 34, 9);
+    graphics.fillStyle(COLORS.cream, 1);
+    graphics.fillRoundedRect(9, 22, 27, 9, 4);
+    graphics.fillTriangle(12, 22, 19, 13, 27, 22);
+    graphics.fillStyle(COLORS.orange, 1);
+    graphics.fillRoundedRect(9, 29, 30, 5, 2);
+    graphics.lineStyle(2, COLORS.cream, 0.9);
+    graphics.lineBetween(16, 12, 16, 8);
+    graphics.lineBetween(29, 15, 29, 9);
+  });
+
   saveTexture(scene, 'obstacle-backpack', 52, 44, (graphics) => {
     graphics.lineStyle(5, 0x6b4434, 1);
     graphics.strokeRoundedRect(15, 2, 22, 20, 9);

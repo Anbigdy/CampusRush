@@ -9,6 +9,7 @@ import {
   applyCrouchingPlayerShape,
   applyNormalPlayerShape,
 } from '../playerSkin.js';
+import { PowerUpManager } from '../powerUps.js';
 import { readHighScore, writeHighScore } from '../storage.js';
 import {
   isSoundEnabled,
@@ -27,12 +28,15 @@ export class GameScene extends Phaser.Scene {
     this.runState = 'playing';
     this.elapsedSeconds = 0;
     this.score = 0;
+    this.scoreAccumulator = 0;
     this.highScore = readHighScore();
     this.currentSpeed = GAMEPLAY.initialSpeed;
+    this.effectiveSpeed = GAMEPLAY.initialSpeed;
     this.distanceToNextObstacle = GAMEPLAY.initialSpawnDistance;
     this.pointerJumpHandler = null;
     this.isNewRecord = false;
     this.isCrouching = false;
+    this.airJumpsUsed = 0;
     this.lastObstacleKey = null;
     this.lastScoreMilestone = 0;
   }
@@ -43,6 +47,7 @@ export class GameScene extends Phaser.Scene {
     this.createPlayer();
     this.createObstacles();
     this.createHud();
+    this.createPowerUps();
     this.createInput();
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.shutdown, this);
@@ -79,10 +84,19 @@ export class GameScene extends Phaser.Scene {
     this.physics.add.overlap(
       this.player,
       this.obstacles,
-      this.endGame,
+      this.handleObstacleCollision,
       undefined,
       this,
     );
+  }
+
+  createPowerUps() {
+    this.powerUps = new PowerUpManager(this, {
+      player: this.player,
+      addScore: (points, x, y, label) =>
+        this.addBonusScore(points, x, y, label),
+      isSpawnSafe: () => this.isPickupSpawnSafe(),
+    });
   }
 
   createHud() {
@@ -201,14 +215,29 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    const isOnGround = this.player.body.blocked.down || this.player.body.touching.down;
-    if (!isOnGround) {
+    const isOnGround =
+      this.player.body.blocked.down || this.player.body.touching.down;
+    const canUseAirJump =
+      !isOnGround &&
+      this.powerUps.canDoubleJump() &&
+      this.airJumpsUsed < 1;
+
+    if (!isOnGround && !canUseAirJump) {
       return;
+    }
+
+    if (canUseAirJump) {
+      this.airJumpsUsed += 1;
+      this.powerUps.showToast('二段跳！');
+    } else {
+      this.airJumpsUsed = 0;
     }
 
     this.player.play(PLAYER_SKIN.jumpAnimationKey, true);
     this.player.setAngle(0);
-    this.player.setVelocityY(GAMEPLAY.jumpVelocity);
+    this.player.setVelocityY(
+      canUseAirJump ? GAMEPLAY.jumpVelocity * 0.92 : GAMEPLAY.jumpVelocity,
+    );
     playSound(this, 'jump');
   }
 
@@ -272,7 +301,7 @@ export class GameScene extends Phaser.Scene {
     obstacle.body.allowGravity = false;
     obstacle.body.setSize(definition.body.width, definition.body.height);
     obstacle.body.setOffset(definition.body.offsetX, definition.body.offsetY);
-    obstacle.setVelocityX(-this.currentSpeed);
+    obstacle.setVelocityX(-this.effectiveSpeed);
     obstacle.setData('label', definition.label);
     obstacle.setData('requiredAction', definition.action);
     obstacle.setData('passed', false);
@@ -284,12 +313,79 @@ export class GameScene extends Phaser.Scene {
     this.distanceToNextObstacle = definition.width + safeGap;
   }
 
+  isPickupSpawnSafe() {
+    let isSafe = true;
+    this.obstacles.children.iterate((obstacle) => {
+      if (
+        obstacle?.active &&
+        !obstacle.getData('resolved') &&
+        obstacle.x > GAMEPLAY.width - 270
+      ) {
+        isSafe = false;
+      }
+    });
+    return isSafe;
+  }
+
+  addBonusScore(points, x, y, label = `+${points}`) {
+    this.scoreAccumulator += points;
+    this.score = Math.floor(this.scoreAccumulator);
+    this.scoreText.setText(String(this.score));
+    this.powerUps?.showScorePopup(x, y, label);
+  }
+
+  handleObstacleCollision(_player, obstacle) {
+    if (
+      this.runState !== 'playing' ||
+      !obstacle?.active ||
+      obstacle.getData('resolved')
+    ) {
+      return;
+    }
+
+    if (this.powerUps.isRushProtected()) {
+      const isScoringRush = this.powerUps.isActive('rush');
+      this.deflectObstacle(obstacle, true);
+      if (isScoringRush) {
+        const points = 5 * this.powerUps.getScoreMultiplier();
+        this.addBonusScore(points, obstacle.x, obstacle.y, `撞飞 +${points}`);
+      }
+      return;
+    }
+
+    if (this.powerUps.consumeShield()) {
+      this.deflectObstacle(obstacle, false);
+      return;
+    }
+
+    this.endGame();
+  }
+
+  deflectObstacle(obstacle, isRush) {
+    obstacle.setData('resolved', true);
+    obstacle.body.enable = false;
+    obstacle.setVelocity(0, 0);
+    this.cameras.main.shake(isRush ? 95 : 70, isRush ? 0.006 : 0.0035);
+
+    this.tweens.add({
+      targets: obstacle,
+      x: obstacle.x + (isRush ? 110 : 70),
+      y: obstacle.y - (isRush ? 105 : 70),
+      angle: obstacle.angle + (isRush ? 220 : 130),
+      alpha: 0,
+      duration: isRush ? 360 : 300,
+      ease: 'Cubic.Out',
+      onComplete: () => obstacle.destroy(),
+    });
+  }
+
   endGame() {
     if (this.runState !== 'playing') {
       return;
     }
 
     this.runState = 'gameOver';
+    this.powerUps.stop();
     const previousHighScore = this.highScore;
     this.highScore = writeHighScore(this.score);
     this.isNewRecord = this.score > previousHighScore;
@@ -419,7 +515,11 @@ export class GameScene extends Phaser.Scene {
   }
 
   updatePlayerVisuals() {
-    const isOnGround = this.player.body.blocked.down || this.player.body.touching.down;
+    const isOnGround =
+      this.player.body.blocked.down || this.player.body.touching.down;
+    if (isOnGround) {
+      this.airJumpsUsed = 0;
+    }
     if (
       isOnGround &&
       !this.isCrouching &&
@@ -446,6 +546,9 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
+    const safeDeltaSeconds = Math.min(delta, 50) / 1000;
+    this.powerUps.updateTimers(safeDeltaSeconds);
+
     this.updateCrouchInput();
 
     if (
@@ -457,14 +560,19 @@ export class GameScene extends Phaser.Scene {
 
     this.updatePlayerVisuals();
 
-    const safeDeltaSeconds = Math.min(delta, 50) / 1000;
     this.elapsedSeconds += safeDeltaSeconds;
-    this.score = Math.floor(this.elapsedSeconds * GAMEPLAY.scorePerSecond);
     this.currentSpeed = Math.min(
       GAMEPLAY.maxSpeed,
       GAMEPLAY.initialSpeed +
         this.elapsedSeconds * GAMEPLAY.speedIncreasePerSecond,
     );
+    this.effectiveSpeed =
+      this.currentSpeed * this.powerUps.getWorldSpeedMultiplier();
+    this.scoreAccumulator +=
+      GAMEPLAY.scorePerSecond *
+      safeDeltaSeconds *
+      this.powerUps.getScoreMultiplier();
+    this.score = Math.floor(this.scoreAccumulator);
 
     this.scoreText.setText(String(this.score));
     this.highScoreText.setText(`最高\n${Math.max(this.highScore, this.score)}`);
@@ -475,24 +583,35 @@ export class GameScene extends Phaser.Scene {
         playSound(this, 'milestone');
       }
     }
-    const speedProgress =
-      (this.currentSpeed - GAMEPLAY.initialSpeed) /
-      (GAMEPLAY.maxSpeed - GAMEPLAY.initialSpeed);
-    this.speedFill.setDisplaySize(Math.max(3, 190 * speedProgress), 8);
+    const speedProgress = Phaser.Math.Clamp(
+      (this.effectiveSpeed - GAMEPLAY.initialSpeed) /
+        (GAMEPLAY.maxSpeed - GAMEPLAY.initialSpeed),
+      0,
+      1,
+    );
+    this.speedFill
+      .setFillStyle(this.powerUps.isActive('rush') ? COLORS.orange : COLORS.mint)
+      .setDisplaySize(Math.max(3, 190 * speedProgress), 8);
 
     scrollCampusBackdrop(
       this.backdrop,
-      this.currentSpeed,
+      this.effectiveSpeed,
       safeDeltaSeconds,
     );
 
-    this.distanceToNextObstacle -= this.currentSpeed * safeDeltaSeconds;
+    this.distanceToNextObstacle -= this.effectiveSpeed * safeDeltaSeconds;
     if (this.distanceToNextObstacle <= 0) {
       this.spawnObstacle();
     }
 
+    this.powerUps.updatePickups(safeDeltaSeconds, this.effectiveSpeed);
+
     this.obstacles.children.iterate((obstacle) => {
-      if (!obstacle?.active || this.runState !== 'playing') {
+      if (
+        !obstacle?.active ||
+        obstacle.getData('resolved') ||
+        this.runState !== 'playing'
+      ) {
         return;
       }
 
@@ -501,7 +620,7 @@ export class GameScene extends Phaser.Scene {
           obstacle.body.left < this.player.body.right &&
           obstacle.body.right > this.player.body.left;
         if (reachesPlayer && !this.isCrouching) {
-          this.endGame();
+          this.handleObstacleCollision(this.player, obstacle);
           return;
         }
       }
@@ -514,7 +633,7 @@ export class GameScene extends Phaser.Scene {
         playSound(this, 'pass');
       }
 
-      obstacle.setVelocityX(-this.currentSpeed);
+      obstacle.setVelocityX(-this.effectiveSpeed);
       if (obstacle.x + obstacle.displayWidth / 2 < GAMEPLAY.obstacleDestroyX) {
         obstacle.destroy();
       }
