@@ -21,24 +21,41 @@ function destroyObjects(objects) {
 export function decorateObstacle(scene, obstacle, definition, surfaceY) {
   const style = ACTION_STYLES[definition.action] ?? ACTION_STYLES.jump;
   const dangerColor = scene.isNeonWorld
-    ? 0xffc857
+    ? 0xff334d
     : scene.isIsekaiWorld
       ? 0xff5f9f
       : 0xff584d;
+  const outlineScale = scene.isNeonWorld ? 1.18 : 1.13;
+  const outlineAlpha = scene.isNeonWorld ? 0.82 : 0.42;
+
+  if (scene.isNeonWorld) {
+    obstacle.setTint(0xff7474);
+  }
+
   const outline = scene.add
     .image(obstacle.x, obstacle.y, definition.key)
     .setDepth(obstacle.depth - 0.04)
     .setTintFill(dangerColor)
-    .setAlpha(0.42)
-    .setScale(1.13);
+    .setAlpha(outlineAlpha)
+    .setScale(outlineScale);
+  const highlight = scene.isNeonWorld
+    ? scene.add
+        .image(obstacle.x, obstacle.y, definition.key)
+        .setDepth(obstacle.depth + 0.04)
+        .setTintFill(0xff5d68)
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setAlpha(0.34)
+    : null;
   const shadow = scene.add
     .ellipse(
       obstacle.x,
       surfaceY - 1,
       Math.max(38, definition.width * 0.9),
       definition.placement === 'air' ? 7 : 11,
-      0x641c27,
-      definition.placement === 'air' ? 0.14 : 0.3,
+      scene.isNeonWorld ? 0xff263d : 0x641c27,
+      scene.isNeonWorld
+        ? definition.placement === 'air' ? 0.24 : 0.46
+        : definition.placement === 'air' ? 0.14 : 0.3,
     )
     .setDepth(obstacle.depth - 0.08);
   const badgeBackground = scene.add
@@ -63,16 +80,21 @@ export function decorateObstacle(scene, obstacle, definition, surfaceY) {
     .setDepth(obstacle.depth + 0.2);
   const presentation = {
     outline,
+    highlight,
     shadow,
     badge,
     surfaceY,
-    outlineAlpha: 0.42,
-    shadowAlpha: definition.placement === 'air' ? 0.14 : 0.3,
+    outlineScale,
+    outlineAlpha,
+    highlightAlpha: scene.isNeonWorld ? 0.34 : 0,
+    shadowAlpha: scene.isNeonWorld
+      ? definition.placement === 'air' ? 0.24 : 0.46
+      : definition.placement === 'air' ? 0.14 : 0.3,
   };
 
   obstacle.setData(OBSTACLE_PRESENTATION_KEY, presentation);
   obstacle.once(Phaser.GameObjects.Events.DESTROY, () => {
-    destroyObjects([outline, shadow, badge]);
+    destroyObjects([outline, highlight, shadow, badge]);
   });
   updateObstaclePresentation(obstacle);
   return presentation;
@@ -84,16 +106,21 @@ export function updateObstaclePresentation(obstacle) {
     return;
   }
 
-  const { outline, shadow, badge } = presentation;
+  const { outline, highlight, shadow, badge } = presentation;
   const obstacleAlpha = obstacle.alpha;
   outline
     .setPosition(obstacle.x, obstacle.y)
     .setAngle(obstacle.angle)
     .setScale(
-      Math.abs(obstacle.scaleX) * 1.13,
-      Math.abs(obstacle.scaleY) * 1.13,
+      Math.abs(obstacle.scaleX) * presentation.outlineScale,
+      Math.abs(obstacle.scaleY) * presentation.outlineScale,
     )
     .setAlpha(presentation.outlineAlpha * obstacleAlpha);
+  highlight
+    ?.setPosition(obstacle.x, obstacle.y)
+    .setAngle(obstacle.angle)
+    .setScale(Math.abs(obstacle.scaleX), Math.abs(obstacle.scaleY))
+    .setAlpha(presentation.highlightAlpha * obstacleAlpha);
   shadow
     .setPosition(obstacle.x, presentation.surfaceY - 1)
     .setScale(Math.max(0.7, Math.abs(obstacle.scaleX)), 1)
@@ -108,7 +135,12 @@ export function updateObstaclePresentation(obstacle) {
 export function getObstaclePresentationObjects(obstacle) {
   const presentation = obstacle.getData(OBSTACLE_PRESENTATION_KEY);
   return presentation
-    ? [presentation.outline, presentation.shadow, presentation.badge]
+    ? [
+        presentation.outline,
+        presentation.highlight,
+        presentation.shadow,
+        presentation.badge,
+      ].filter(Boolean)
     : [];
 }
 

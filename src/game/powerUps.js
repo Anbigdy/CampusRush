@@ -64,22 +64,6 @@ const POWER_UP_ORDER = Object.freeze([
 const FONT_FAMILY = 'Arial, "Microsoft YaHei", sans-serif';
 const COIN_VALUE = 10;
 const MAGNET_RADIUS = 220;
-const NEON_PICKUP_TEXTURES = Object.freeze({
-  shield: 'neon-pickup-shield',
-  rush: 'neon-pickup-rush',
-  magnet: 'neon-pickup-magnet',
-  doubleScore: 'neon-pickup-double-score',
-  coinBonus: 'neon-pickup-coin-bonus',
-  coin: 'neon-pickup-coin',
-  bundle: 'neon-pickup-bundle',
-});
-const NEON_PICKUP_LABELS = Object.freeze({
-  shield: '六边形护盾核心',
-  rush: '时序超频核心',
-  magnet: '重力线圈',
-  doubleScore: '双倍数据芯片',
-  coinBonus: '信用增幅器',
-});
 
 export class PowerUpManager {
   constructor(scene, {
@@ -123,21 +107,6 @@ export class PowerUpManager {
     this.createHud();
     this.createPlayerEffects();
     this.restoreState(initialState);
-  }
-
-  getTexture(id) {
-    if (this.scene.isNeonWorld) {
-      return NEON_PICKUP_TEXTURES[id];
-    }
-    return id === 'coin' || id === 'bundle'
-      ? `pickup-${id}`
-      : POWER_UPS[id].texture;
-  }
-
-  getLabel(id) {
-    return this.scene.isNeonWorld
-      ? NEON_PICKUP_LABELS[id] ?? POWER_UPS[id]?.label
-      : POWER_UPS[id]?.label;
   }
 
   createHud() {
@@ -314,7 +283,7 @@ export class PowerUpManager {
     const pickup = this.skillPickups.create(
       GAMEPLAY.width + 36,
       GAMEPLAY.groundY - 43,
-      this.getTexture(id),
+      definition.texture,
     );
     pickup.setDepth(9);
     pickup.setData('powerUpId', id);
@@ -348,7 +317,7 @@ export class PowerUpManager {
   }
 
   createCoin(x, y) {
-    const coin = this.coins.create(x, y, this.getTexture('coin'));
+    const coin = this.coins.create(x, y, 'pickup-coin');
     coin.setDepth(9);
     coin.body.setCircle(13, 2, 2);
     decoratePickup(this.scene, coin, { color: 0xffc83d, kind: 'coin' });
@@ -371,7 +340,7 @@ export class PowerUpManager {
   }
 
   spawnRewardBundle(x, y, routeId) {
-    const pickup = this.skillPickups.create(x, y, this.getTexture('bundle'));
+    const pickup = this.skillPickups.create(x, y, 'pickup-bundle');
     pickup.setDepth(10);
     pickup.setData('rewardBundle', true);
     pickup.setData('routeId', routeId);
@@ -434,7 +403,7 @@ export class PowerUpManager {
     if (id === 'rush') {
       this.rushGraceRemaining = 0;
     }
-    this.showToast(`获得：${this.getLabel(id)}`);
+    this.showToast(`获得：${definition.label}`);
     this.updateHud();
     this.updatePlayerEffects();
   }

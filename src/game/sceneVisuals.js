@@ -57,21 +57,30 @@ export function createNeonBackdrop(scene) {
   const sky = scene.add
     .tileSprite(480, 225, GAMEPLAY.width, 450, 'neon-bg-skyline')
     .setTileScale(2.02)
+    .setTint(0xa6afd0)
+    .setAlpha(0.86)
     .setDepth(0);
   const far = scene.add
     .tileSprite(480, 225, GAMEPLAY.width, 450, 'neon-bg-mid')
     .setTileScale(2.02)
+    .setTint(0x7380a8)
+    .setAlpha(0.58)
     .setDepth(1);
   const city = scene.add
     .tileSprite(480, 225, GAMEPLAY.width, 450, 'neon-bg-near')
     .setTileScale(2.02)
+    .setTint(0x7c789d)
+    .setAlpha(0.68)
     .setDepth(2);
   const ground = scene.add
     .tileSprite(480, 495, GAMEPLAY.width, 90, 'neon-ground')
     .setDepth(5);
 
+  const atmosphere = scene.add
+    .rectangle(480, 225, GAMEPLAY.width, 450, 0x030817, 0.22)
+    .setDepth(3);
   const horizonGlow = scene.add
-    .rectangle(480, 392, GAMEPLAY.width, 46, 0xff3f9a, 0.09)
+    .rectangle(480, 402, GAMEPLAY.width, 28, 0x35f2df, 0.055)
     .setDepth(3);
   const rain = Array.from({ length: 22 }, (_, index) =>
     scene.add
@@ -81,13 +90,13 @@ export function createNeonBackdrop(scene) {
         2,
         13 + (index % 4) * 5,
         index % 5 === 0 ? 0xff5bae : 0x75f9ec,
-        0.16 + (index % 3) * 0.06,
+        0.1 + (index % 3) * 0.035,
       )
       .setAngle(16)
       .setDepth(4),
   );
 
-  return { sky, far, city, ground, horizonGlow, rain };
+  return { sky, far, city, ground, atmosphere, horizonGlow, rain };
 }
 
 export function scrollCampusBackdrop(backdrop, speed, deltaSeconds) {
