@@ -16,6 +16,15 @@ const SOUND_LIBRARY = Object.freeze({
   pass: [
     { frequency: 720, endFrequency: 980, duration: 0.075, type: 'sine', volume: 0.024 },
   ],
+  coin: [
+    { frequency: 880, endFrequency: 1175, duration: 0.065, type: 'sine', volume: 0.03 },
+    { frequency: 1319, duration: 0.055, delay: 0.035, type: 'sine', volume: 0.022 },
+  ],
+  powerUp: [
+    { frequency: 440, endFrequency: 660, duration: 0.1, type: 'triangle', volume: 0.035 },
+    { frequency: 659, endFrequency: 988, duration: 0.12, delay: 0.08, type: 'sine', volume: 0.038 },
+    { frequency: 988, endFrequency: 1319, duration: 0.15, delay: 0.16, type: 'sine', volume: 0.034 },
+  ],
   milestone: [
     { frequency: 523, duration: 0.09, type: 'sine', volume: 0.032 },
     { frequency: 659, duration: 0.09, delay: 0.075, type: 'sine', volume: 0.034 },

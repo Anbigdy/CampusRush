@@ -10,6 +10,7 @@ import {
   applyNormalPlayerShape,
 } from '../playerSkin.js';
 import { PowerUpManager } from '../powerUps.js';
+import { PICKUP_ENTRY_CLEARANCE } from '../pickupPatterns.js';
 import { readHighScore, writeHighScore } from '../storage.js';
 import {
   isSoundEnabled,
@@ -36,7 +37,6 @@ export class GameScene extends Phaser.Scene {
     this.pointerJumpHandler = null;
     this.isNewRecord = false;
     this.isCrouching = false;
-    this.airJumpsUsed = 0;
     this.lastObstacleKey = null;
     this.lastScoreMilestone = 0;
   }
@@ -96,6 +96,7 @@ export class GameScene extends Phaser.Scene {
       addScore: (points, x, y, label) =>
         this.addBonusScore(points, x, y, label),
       isSpawnSafe: () => this.isPickupSpawnSafe(),
+      reserveObstacleGap: (distance) => this.reserveObstacleGap(distance),
     });
   }
 
@@ -217,27 +218,13 @@ export class GameScene extends Phaser.Scene {
 
     const isOnGround =
       this.player.body.blocked.down || this.player.body.touching.down;
-    const canUseAirJump =
-      !isOnGround &&
-      this.powerUps.canDoubleJump() &&
-      this.airJumpsUsed < 1;
-
-    if (!isOnGround && !canUseAirJump) {
+    if (!isOnGround) {
       return;
-    }
-
-    if (canUseAirJump) {
-      this.airJumpsUsed += 1;
-      this.powerUps.showToast('二段跳！');
-    } else {
-      this.airJumpsUsed = 0;
     }
 
     this.player.play(PLAYER_SKIN.jumpAnimationKey, true);
     this.player.setAngle(0);
-    this.player.setVelocityY(
-      canUseAirJump ? GAMEPLAY.jumpVelocity * 0.92 : GAMEPLAY.jumpVelocity,
-    );
+    this.player.setVelocityY(GAMEPLAY.jumpVelocity);
     playSound(this, 'jump');
   }
 
@@ -319,12 +306,19 @@ export class GameScene extends Phaser.Scene {
       if (
         obstacle?.active &&
         !obstacle.getData('resolved') &&
-        obstacle.x > GAMEPLAY.width - 270
+        obstacle.body.right > GAMEPLAY.width - PICKUP_ENTRY_CLEARANCE
       ) {
         isSafe = false;
       }
     });
     return isSafe;
+  }
+
+  reserveObstacleGap(distance) {
+    this.distanceToNextObstacle = Math.max(
+      this.distanceToNextObstacle,
+      distance,
+    );
   }
 
   addBonusScore(points, x, y, label = `+${points}`) {
@@ -517,9 +511,6 @@ export class GameScene extends Phaser.Scene {
   updatePlayerVisuals() {
     const isOnGround =
       this.player.body.blocked.down || this.player.body.touching.down;
-    if (isOnGround) {
-      this.airJumpsUsed = 0;
-    }
     if (
       isOnGround &&
       !this.isCrouching &&

@@ -1,5 +1,10 @@
 import Phaser from 'phaser';
 import { COLORS, GAMEPLAY } from './constants.js';
+import {
+  PICKUP_TRAILING_GAP,
+  createJumpArcCoinPattern,
+} from './pickupPatterns.js';
+import { playSound } from './soundEffects.js';
 
 export const POWER_UPS = Object.freeze({
   shield: Object.freeze({
@@ -34,13 +39,13 @@ export const POWER_UPS = Object.freeze({
     duration: 10,
     color: 0x9b6bd1,
   }),
-  doubleJump: Object.freeze({
-    id: 'doubleJump',
-    texture: 'pickup-double-jump',
-    label: '弹力运动鞋',
-    shortLabel: '二段跳',
+  coinBonus: Object.freeze({
+    id: 'coinBonus',
+    texture: 'pickup-coin-bonus',
+    label: '奖学金券',
+    shortLabel: '金币×2',
     duration: 10,
-    color: 0x3bbd74,
+    color: 0xe9a72f,
   }),
 });
 
@@ -49,7 +54,7 @@ const POWER_UP_ORDER = Object.freeze([
   'rush',
   'magnet',
   'doubleScore',
-  'doubleJump',
+  'coinBonus',
 ]);
 
 const FONT_FAMILY = 'Arial, "Microsoft YaHei", sans-serif';
@@ -57,11 +62,12 @@ const COIN_VALUE = 10;
 const MAGNET_RADIUS = 220;
 
 export class PowerUpManager {
-  constructor(scene, { player, addScore, isSpawnSafe }) {
+  constructor(scene, { player, addScore, isSpawnSafe, reserveObstacleGap }) {
     this.scene = scene;
     this.player = player;
     this.addScore = addScore;
     this.isSpawnSafe = isSpawnSafe;
+    this.reserveObstacleGap = reserveObstacleGap;
     this.activeEffects = new Map();
     this.rushGraceRemaining = 0;
     this.skillSpawnRemaining = 7;
@@ -188,7 +194,7 @@ export class PowerUpManager {
     this.coinSpawnRemaining -= deltaSeconds;
 
     if (this.skillSpawnRemaining <= 0) {
-      if (this.isSpawnSafe()) {
+      if (this.isSpawnSafe() && this.isPickupEntryClear()) {
         this.spawnSkill();
         this.skillSpawnRemaining = Phaser.Math.FloatBetween(12, 18);
       } else {
@@ -197,8 +203,8 @@ export class PowerUpManager {
     }
 
     if (this.coinSpawnRemaining <= 0) {
-      if (this.isSpawnSafe()) {
-        this.spawnCoinCluster();
+      if (this.isSpawnSafe() && this.isPickupEntryClear()) {
+        this.spawnCoinCluster(worldSpeed);
         this.coinSpawnRemaining = Phaser.Math.FloatBetween(3, 5);
       } else {
         this.coinSpawnRemaining = 0.8;
@@ -239,6 +245,21 @@ export class PowerUpManager {
     });
   }
 
+  isPickupEntryClear() {
+    const entryX = GAMEPLAY.width - 170;
+    let isClear = true;
+
+    [this.skillPickups, this.coins].forEach((group) => {
+      group.children.iterate((pickup) => {
+        if (pickup?.active && pickup.x > entryX) {
+          isClear = false;
+        }
+      });
+    });
+
+    return isClear;
+  }
+
   spawnSkill() {
     const id = Phaser.Utils.Array.GetRandom(POWER_UP_ORDER);
     const definition = POWER_UPS[id];
@@ -250,6 +271,7 @@ export class PowerUpManager {
     pickup.setDepth(9);
     pickup.setData('powerUpId', id);
     pickup.body.setCircle(20, 3, 3);
+    this.reserveObstacleGap(PICKUP_TRAILING_GAP);
 
     this.scene.tweens.add({
       targets: pickup,
@@ -261,19 +283,17 @@ export class PowerUpManager {
     });
   }
 
-  spawnCoinCluster() {
-    const patterns = [
-      [412, 412, 412, 412],
-      [410, 385, 366, 385, 410],
-      [396, 376, 396],
-    ];
-    const pattern = Phaser.Utils.Array.GetRandom(patterns);
+  spawnCoinCluster(worldSpeed) {
+    const pattern = createJumpArcCoinPattern(worldSpeed);
     const startX = GAMEPLAY.width + 28;
+    const clusterId = this.scene.time.now;
 
-    pattern.forEach((y, index) => {
-      const coin = this.coins.create(startX + index * 38, y, 'pickup-coin');
+    pattern.forEach(({ time, xOffset, y }) => {
+      const coin = this.coins.create(startX + xOffset, y, 'pickup-coin');
       coin.setDepth(9);
       coin.body.setCircle(13, 2, 2);
+      coin.setData('clusterId', clusterId);
+      coin.setData('jumpTime', time);
       this.scene.tweens.add({
         targets: coin,
         scaleX: 0.72,
@@ -283,6 +303,9 @@ export class PowerUpManager {
         ease: 'Sine.InOut',
       });
     });
+
+    const arcWidth = pattern.at(-1)?.xOffset ?? 0;
+    this.reserveObstacleGap(arcWidth + PICKUP_TRAILING_GAP);
   }
 
   collectSkill(_player, pickup) {
@@ -292,6 +315,7 @@ export class PowerUpManager {
 
     const id = pickup.getData('powerUpId');
     pickup.destroy();
+    playSound(this.scene, 'powerUp');
     this.activate(id);
   }
 
@@ -303,7 +327,9 @@ export class PowerUpManager {
     const x = coin.x;
     const y = coin.y;
     coin.destroy();
-    const points = COIN_VALUE * this.getScoreMultiplier();
+    playSound(this.scene, 'coin');
+    const points =
+      COIN_VALUE * this.getScoreMultiplier() * this.getCoinMultiplier();
     this.addScore(points, x, y, `+${points}`);
   }
 
@@ -428,8 +454,8 @@ export class PowerUpManager {
     return this.isActive('doubleScore') ? 2 : 1;
   }
 
-  canDoubleJump() {
-    return this.isActive('doubleJump');
+  getCoinMultiplier() {
+    return this.isActive('coinBonus') ? 2 : 1;
   }
 
   isRushProtected() {

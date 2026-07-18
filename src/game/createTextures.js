@@ -248,19 +248,20 @@ export function createGameTextures(scene) {
     graphics.fillCircle(30, 22, 3);
   });
 
-  saveTexture(scene, 'pickup-double-jump', 46, 46, (graphics) => {
+  saveTexture(scene, 'pickup-coin-bonus', 46, 46, (graphics) => {
     graphics.fillStyle(0xffffff, 0.92);
     graphics.fillCircle(23, 23, 22);
-    graphics.fillStyle(0x3bbd74, 1);
+    graphics.fillStyle(0xe9a72f, 1);
     graphics.fillRoundedRect(5, 6, 36, 34, 9);
     graphics.fillStyle(COLORS.cream, 1);
-    graphics.fillRoundedRect(9, 22, 27, 9, 4);
-    graphics.fillTriangle(12, 22, 19, 13, 27, 22);
+    graphics.fillRoundedRect(10, 11, 26, 24, 4);
     graphics.fillStyle(COLORS.orange, 1);
-    graphics.fillRoundedRect(9, 29, 30, 5, 2);
-    graphics.lineStyle(2, COLORS.cream, 0.9);
-    graphics.lineBetween(16, 12, 16, 8);
-    graphics.lineBetween(29, 15, 29, 9);
+    graphics.fillCircle(23, 23, 7);
+    graphics.fillStyle(COLORS.cream, 1);
+    graphics.fillRoundedRect(21, 17, 4, 12, 2);
+    graphics.lineStyle(2, 0xd18a20, 1);
+    graphics.lineBetween(13, 15, 33, 15);
+    graphics.lineBetween(13, 31, 33, 31);
   });
 
   saveTexture(scene, 'obstacle-backpack', 52, 44, (graphics) => {
