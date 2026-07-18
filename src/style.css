@@ -2,7 +2,7 @@
   font-family:
     Inter, ui-rounded, "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
   color: #f8fbff;
-  background: #0b1f31;
+  background: #0d2a40;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
 }
@@ -24,16 +24,45 @@ body {
   min-height: 100dvh;
   overflow: hidden;
   background:
-    radial-gradient(circle at 50% 20%, rgba(69, 145, 182, 0.28), transparent 42%),
-    linear-gradient(160deg, #102d44 0%, #071521 100%);
+    radial-gradient(circle at 12% 18%, rgba(255, 202, 100, 0.2), transparent 25%),
+    radial-gradient(circle at 88% 82%, rgba(94, 207, 172, 0.18), transparent 27%),
+    linear-gradient(145deg, #173f5d 0%, #0a2236 55%, #071824 100%);
+}
+
+body::before,
+body::after {
+  position: fixed;
+  z-index: 0;
+  width: 22vw;
+  height: 22vw;
+  min-width: 180px;
+  min-height: 180px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 50%;
+  content: "";
+  pointer-events: none;
+}
+
+body::before {
+  top: -8vw;
+  left: -6vw;
+  box-shadow: 0 0 0 34px rgba(255, 255, 255, 0.025);
+}
+
+body::after {
+  right: -8vw;
+  bottom: -10vw;
+  box-shadow: 0 0 0 48px rgba(255, 255, 255, 0.025);
 }
 
 .app-shell {
+  position: relative;
+  z-index: 1;
   min-height: 100vh;
   min-height: 100dvh;
   display: grid;
   place-content: center;
-  gap: 14px;
+  gap: 16px;
   padding: clamp(12px, 3vw, 32px);
 }
 
@@ -41,12 +70,13 @@ body {
   width: min(960px, calc(100vw - 24px));
   aspect-ratio: 16 / 9;
   overflow: hidden;
-  border: 3px solid rgba(255, 255, 255, 0.84);
-  border-radius: 22px;
-  background: #9bdcf4;
+  border: 4px solid #fff7e3;
+  border-radius: 24px;
+  background: #87d2f3;
   box-shadow:
-    0 24px 80px rgba(0, 0, 0, 0.42),
-    0 0 0 8px rgba(255, 255, 255, 0.08);
+    0 28px 90px rgba(0, 0, 0, 0.46),
+    0 0 0 8px rgba(126, 203, 224, 0.13),
+    inset 0 0 0 1px rgba(23, 60, 89, 0.16);
 }
 
 #game,
@@ -62,12 +92,19 @@ body {
 }
 
 .page-tip {
+  justify-self: center;
   margin: 0;
-  color: rgba(232, 246, 255, 0.78);
-  font-size: clamp(12px, 1.6vw, 15px);
+  padding: 8px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.17);
+  border-radius: 999px;
+  color: rgba(242, 249, 252, 0.82);
+  background: rgba(7, 24, 36, 0.35);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+  font-size: clamp(12px, 1.6vw, 14px);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-align: center;
+  backdrop-filter: blur(8px);
 }
 
 @media (max-aspect-ratio: 4 / 3) {
@@ -83,11 +120,12 @@ body {
   }
 
   .game-frame {
-    width: min(960px, calc((100dvh - 48px) * 16 / 9), calc(100vw - 16px));
-    border-radius: 14px;
+    width: min(960px, calc((100dvh - 52px) * 16 / 9), calc(100vw - 16px));
+    border-radius: 15px;
   }
 
   .page-tip {
+    padding: 5px 13px;
     font-size: 11px;
   }
 }

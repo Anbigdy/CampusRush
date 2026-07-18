@@ -1,5 +1,9 @@
 import Phaser from 'phaser';
 import { COLORS, GAMEPLAY } from '../constants.js';
+import {
+  createCampusBackdrop,
+  scrollCampusBackdrop,
+} from '../sceneVisuals.js';
 import { readHighScore } from '../storage.js';
 
 const FONT_FAMILY = 'Arial, "Microsoft YaHei", sans-serif';
@@ -11,102 +15,189 @@ export class MenuScene extends Phaser.Scene {
 
   create() {
     this.hasStarted = false;
-    this.createBackground();
+    this.backdrop = createCampusBackdrop(this);
+    this.createDecorations();
+    this.createTitle();
+    this.createInstructionCard();
+    this.createStartButton();
+  }
 
+  createDecorations() {
     this.add
-      .text(GAMEPLAY.width / 2, 82, 'CAMPUS RUSH', {
+      .rectangle(848, 54, 154, 44, COLORS.navyDark, 0.88)
+      .setStrokeStyle(2, COLORS.white, 0.82)
+      .setDepth(12);
+    this.add
+      .text(848, 54, '08:29  ·  早八预警', {
         fontFamily: FONT_FAMILY,
-        fontSize: '58px',
+        fontSize: '15px',
         fontStyle: 'bold',
-        color: '#173b57',
-        stroke: '#ffffff',
-        strokeThickness: 8,
+        color: '#fff7e3',
       })
       .setOrigin(0.5)
-      .setDepth(10);
+      .setDepth(13);
 
     this.add
-      .text(GAMEPLAY.width / 2, 130, '校园冲刺', {
+      .sprite(128, 397, 'player-run-1')
+      .setScale(1.5)
+      .setDepth(8);
+    this.add.ellipse(128, 446, 78, 13, COLORS.navyDark, 0.18).setDepth(6);
+
+    this.add
+      .image(845, 425, 'obstacle-backpack')
+      .setScale(1.1)
+      .setDepth(7);
+    this.add
+      .image(903, 416, 'obstacle-barricade')
+      .setScale(0.72)
+      .setDepth(7);
+  }
+
+  createTitle() {
+    this.add
+      .text(480, 88, 'CAMPUS RUSH', {
         fontFamily: FONT_FAMILY,
-        fontSize: '23px',
+        fontSize: '62px',
         fontStyle: 'bold',
-        color: '#2f617c',
-        letterSpacing: 6,
+        color: '#0d2a40',
       })
       .setOrigin(0.5)
-      .setDepth(10);
-
-    const panel = this.add
-      .rectangle(GAMEPLAY.width / 2, 258, 490, 210, COLORS.navyDark, 0.9)
-      .setStrokeStyle(3, COLORS.white, 0.9)
+      .setAlpha(0.22)
+      .setPosition(484, 94)
       .setDepth(9);
 
     this.add
-      .text(GAMEPLAY.width / 2, 196, '快迟到了！一路跳过校园障碍吧', {
+      .text(480, 84, 'CAMPUS RUSH', {
         fontFamily: FONT_FAMILY,
-        fontSize: '22px',
+        fontSize: '62px',
         fontStyle: 'bold',
-        color: '#fff4d6',
+        color: '#173c59',
+        stroke: '#ffffff',
+        strokeThickness: 9,
       })
       .setOrigin(0.5)
       .setDepth(10);
 
     this.add
-      .text(
-        GAMEPLAY.width / 2,
-        262,
-        '空格键  /  方向上键  /  点击画面\n落地后才能再次跳跃',
-        {
-          fontFamily: FONT_FAMILY,
-          fontSize: '19px',
-          color: '#ffffff',
-          align: 'center',
-          lineSpacing: 12,
-        },
-      )
-      .setOrigin(0.5)
-      .setDepth(10);
-
-    this.add
-      .text(GAMEPLAY.width / 2, 334, `历史最高分  ${readHighScore()}`, {
+      .text(480, 132, '校 园 冲 刺', {
         fontFamily: FONT_FAMILY,
-        fontSize: '18px',
+        fontSize: '20px',
         fontStyle: 'bold',
-        color: '#89e9be',
+        color: '#356d89',
+        letterSpacing: 8,
       })
       .setOrigin(0.5)
       .setDepth(10);
-
-    this.createStartButton();
-
-    panel.setScale(0.98);
   }
 
-  createBackground() {
-    this.add.rectangle(480, 270, 960, 540, COLORS.sky).setDepth(0);
-    this.add.circle(790, 85, 42, 0xffdf72, 0.92).setDepth(1);
-    this.farBackground = this.add
-      .tileSprite(480, 260, GAMEPLAY.width, 210, 'far-scenery')
-      .setDepth(2);
-    this.campusBackground = this.add
-      .tileSprite(480, 325, GAMEPLAY.width, 250, 'campus-scenery')
-      .setDepth(3);
+  createInstructionCard() {
     this.add
-      .tileSprite(480, 495, GAMEPLAY.width, 90, 'ground-tile')
-      .setDepth(4);
+      .rectangle(486, 269, 550, 224, COLORS.navyDark, 0.2)
+      .setDepth(9);
+    this.add
+      .rectangle(480, 262, 550, 224, COLORS.cream, 0.97)
+      .setStrokeStyle(3, COLORS.navy, 0.92)
+      .setDepth(10);
+
+    this.add
+      .rectangle(480, 171, 158, 28, COLORS.coral, 1)
+      .setDepth(11);
+    this.add
+      .text(480, 171, '早八危机 · 快迟到了', {
+        fontFamily: FONT_FAMILY,
+        fontSize: '14px',
+        fontStyle: 'bold',
+        color: '#ffffff',
+      })
+      .setOrigin(0.5)
+      .setDepth(12);
+
+    this.add
+      .text(480, 209, '一路向前，跳过校园里的小麻烦！', {
+        fontFamily: FONT_FAMILY,
+        fontSize: '21px',
+        fontStyle: 'bold',
+        color: '#173c59',
+      })
+      .setOrigin(0.5)
+      .setDepth(12);
+
+    this.add
+      .text(350, 255, '跳跃操作', {
+        fontFamily: FONT_FAMILY,
+        fontSize: '15px',
+        fontStyle: 'bold',
+        color: '#53758a',
+      })
+      .setOrigin(0, 0.5)
+      .setDepth(12);
+
+    this.createKeyChip(452, 255, 'SPACE', 84);
+    this.createKeyChip(544, 255, '↑', 52);
+    this.createKeyChip(620, 255, '点击', 72);
+
+    this.add
+      .text(480, 291, '落地后才能再次起跳，把握节奏最重要', {
+        fontFamily: FONT_FAMILY,
+        fontSize: '15px',
+        color: '#557384',
+      })
+      .setOrigin(0.5)
+      .setDepth(12);
+
+    this.add
+      .rectangle(480, 331, 244, 42, COLORS.navy, 1)
+      .setDepth(11);
+    this.add.circle(381, 331, 13, COLORS.orange, 1).setDepth(12);
+    this.add
+      .text(381, 331, '★', {
+        fontFamily: FONT_FAMILY,
+        fontSize: '13px',
+        fontStyle: 'bold',
+        color: '#ffffff',
+      })
+      .setOrigin(0.5)
+      .setDepth(13);
+    this.add
+      .text(495, 331, `历史最高分  ${readHighScore()}`, {
+        fontFamily: FONT_FAMILY,
+        fontSize: '17px',
+        fontStyle: 'bold',
+        color: '#ffffff',
+      })
+      .setOrigin(0.5)
+      .setDepth(12);
+  }
+
+  createKeyChip(x, y, label, width) {
+    this.add
+      .rectangle(x, y, width, 31, 0xffffff, 1)
+      .setStrokeStyle(2, 0x9ab3c1, 1)
+      .setDepth(12);
+    this.add
+      .text(x, y, label, {
+        fontFamily: FONT_FAMILY,
+        fontSize: '14px',
+        fontStyle: 'bold',
+        color: '#173c59',
+      })
+      .setOrigin(0.5)
+      .setDepth(13);
   }
 
   createStartButton() {
+    const shadow = this.add
+      .rectangle(484, 410, 246, 66, 0x9d3f3b, 0.38)
+      .setDepth(11);
     const button = this.add
-      .rectangle(GAMEPLAY.width / 2, 405, 230, 64, COLORS.coral, 1)
+      .rectangle(480, 404, 246, 66, COLORS.coral, 1)
       .setStrokeStyle(4, COLORS.white, 1)
       .setInteractive({ useHandCursor: true })
       .setDepth(12);
-
     const label = this.add
-      .text(GAMEPLAY.width / 2, 405, '开始冲刺', {
+      .text(480, 404, '开始冲刺  →', {
         fontFamily: FONT_FAMILY,
-        fontSize: '25px',
+        fontSize: '24px',
         fontStyle: 'bold',
         color: '#ffffff',
       })
@@ -114,14 +205,14 @@ export class MenuScene extends Phaser.Scene {
       .setDepth(13);
 
     button.on('pointerover', () => {
-      button.setFillStyle(0xff806f);
-      button.setScale(1.03);
-      label.setScale(1.03);
+      button.setFillStyle(0xff8375).setScale(1.035);
+      label.setScale(1.035);
+      shadow.setScale(1.035);
     });
     button.on('pointerout', () => {
-      button.setFillStyle(COLORS.coral);
-      button.setScale(1);
+      button.setFillStyle(COLORS.coral).setScale(1);
       label.setScale(1);
+      shadow.setScale(1);
     });
     button.on('pointerdown', () => {
       if (this.hasStarted) {
@@ -134,7 +225,6 @@ export class MenuScene extends Phaser.Scene {
 
   update(_time, delta) {
     const seconds = Math.min(delta, 50) / 1000;
-    this.farBackground.tilePositionX += 10 * seconds;
-    this.campusBackground.tilePositionX += 18 * seconds;
+    scrollCampusBackdrop(this.backdrop, 55, seconds);
   }
 }
