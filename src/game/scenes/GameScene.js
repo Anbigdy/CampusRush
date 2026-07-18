@@ -28,6 +28,8 @@ import {
 } from '../soundEffects.js';
 
 const FONT_FAMILY = 'Arial, "Microsoft YaHei", sans-serif';
+const MOBILE_INPUT_EVENT = 'campus-rush:mobile-input';
+const CONTROLS_VISIBILITY_EVENT = 'campus-rush:controls-visibility';
 
 export class GameScene extends Phaser.Scene {
   constructor(sceneKey = 'GameScene', worldMode = 'campus') {
@@ -51,6 +53,8 @@ export class GameScene extends Phaser.Scene {
     this.effectiveSpeed = this.currentSpeed;
     this.distanceToNextObstacle = GAMEPLAY.initialSpawnDistance;
     this.pointerJumpHandler = null;
+    this.mobileInputHandler = null;
+    this.mobileCrouchHeld = false;
     this.isNewRecord = false;
     this.isCrouching = false;
     this.isFastFalling = false;
@@ -74,6 +78,7 @@ export class GameScene extends Phaser.Scene {
     this.createPowerUps();
     this.createPlatformRoutes();
     this.createInput();
+    this.setMobileControlsVisible(true);
 
     if (this.isIsekaiWorld) {
       this.showIsekaiArrival();
@@ -267,6 +272,37 @@ export class GameScene extends Phaser.Scene {
     this.mKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.M);
     this.pointerJumpHandler = () => this.tryJump();
     this.input.on('pointerdown', this.pointerJumpHandler);
+    this.mobileInputHandler = (event) => {
+      const { action, pressed } = event.detail ?? {};
+      if (action === 'jump' && pressed) {
+        this.tryJump();
+        return;
+      }
+      if (action !== 'crouch') {
+        return;
+      }
+
+      this.mobileCrouchHeld = Boolean(pressed);
+      if (pressed) {
+        if (this.isPlayerGrounded()) {
+          this.startCrouch();
+        } else {
+          this.startFastFall();
+        }
+      } else {
+        this.stopFastFall();
+        this.stopCrouch();
+      }
+    };
+    window.addEventListener(MOBILE_INPUT_EVENT, this.mobileInputHandler);
+  }
+
+  setMobileControlsVisible(visible) {
+    window.dispatchEvent(
+      new CustomEvent(CONTROLS_VISIBILITY_EVENT, {
+        detail: { visible },
+      }),
+    );
   }
 
   tryJump() {
@@ -367,7 +403,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   updateCrouchInput() {
-    const wantsToCrouch = this.cursors.down.isDown || this.sKey.isDown;
+    const wantsToCrouch =
+      this.cursors.down.isDown || this.sKey.isDown || this.mobileCrouchHeld;
     const isOnGround = this.isPlayerGrounded();
 
     if (isOnGround) {
@@ -631,6 +668,7 @@ export class GameScene extends Phaser.Scene {
 
     this.storyTriggered = true;
     this.runState = 'storyTransition';
+    this.setMobileControlsVisible(false);
     this.platformRoutes.clearForTransition();
     this.powerUps.clearForTransition();
     this.stopCrouch();
@@ -870,6 +908,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.runState = 'gameOver';
+    this.setMobileControlsVisible(false);
     this.powerUps.stop();
     const previousHighScore = this.highScore;
     this.highScore = writeHighScore(this.score);
@@ -1158,10 +1197,16 @@ export class GameScene extends Phaser.Scene {
   }
 
   shutdown() {
+    this.setMobileControlsVisible(false);
     this.platformRoutes?.destroy();
     if (this.pointerJumpHandler) {
       this.input.off('pointerdown', this.pointerJumpHandler);
       this.pointerJumpHandler = null;
     }
+    if (this.mobileInputHandler) {
+      window.removeEventListener(MOBILE_INPUT_EVENT, this.mobileInputHandler);
+      this.mobileInputHandler = null;
+    }
+    this.mobileCrouchHeld = false;
   }
 }

@@ -15,6 +15,33 @@
       <div class="game-frame" aria-label="Campus Rush 游戏区域">
         <div id="game"></div>
       </div>
+      <nav
+        class="mobile-controls"
+        data-mobile-controls
+        aria-label="移动端游戏操作"
+        hidden
+      >
+        <button
+          class="mobile-control mobile-control--crouch"
+          type="button"
+          data-action="crouch"
+          aria-label="按住下蹲，空中快速下坠"
+          aria-pressed="false"
+        >
+          <span class="mobile-control__icon" aria-hidden="true">↓</span>
+          <span class="mobile-control__label">下蹲 / 下坠</span>
+        </button>
+        <button
+          class="mobile-control mobile-control--jump"
+          type="button"
+          data-action="jump"
+          aria-label="跳跃，再按一次二段跳"
+          aria-pressed="false"
+        >
+          <span class="mobile-control__icon" aria-hidden="true">↑</span>
+          <span class="mobile-control__label">跳跃 / 二段</span>
+        </button>
+      </nav>
       <p class="page-tip">斜坡与高台藏有道具大礼包 · 连续跳两次：二段跳 · 空中 ↓ / S：快速下坠 · M：声音</p>
     </main>
     <script type="module" src="/src/main.js"></script>

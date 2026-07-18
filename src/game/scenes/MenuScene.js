@@ -21,6 +21,11 @@ export class MenuScene extends Phaser.Scene {
   }
 
   create() {
+    window.dispatchEvent(
+      new CustomEvent('campus-rush:controls-visibility', {
+        detail: { visible: false },
+      }),
+    );
     this.hasStarted = false;
     this.backdrop = createCampusBackdrop(this);
     this.createDecorations();

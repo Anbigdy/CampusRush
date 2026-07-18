@@ -1,4 +1,7 @@
 :root {
+  --mobile-control-crouch: #315870;
+  --mobile-control-jump: #ff6f61;
+  --mobile-control-ink: #fff7e3;
   font-family:
     Inter, ui-rounded, "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
   color: #f8fbff;
@@ -91,6 +94,86 @@ body::after {
   touch-action: manipulation;
 }
 
+.mobile-controls {
+  width: min(640px, calc(100vw - 28px));
+  min-height: 78px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(20px, 9vw, 86px);
+  justify-self: center;
+  padding: 2px max(2px, env(safe-area-inset-right))
+    max(2px, env(safe-area-inset-bottom)) max(2px, env(safe-area-inset-left));
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.mobile-controls[hidden] {
+  display: none;
+}
+
+.mobile-control {
+  min-width: 0;
+  min-height: 72px;
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  align-items: center;
+  gap: 8px;
+  border: 3px solid rgba(255, 247, 227, 0.95);
+  border-radius: 22px;
+  padding: 9px 14px;
+  color: var(--mobile-control-ink);
+  box-shadow:
+    0 8px 0 rgba(5, 20, 31, 0.42),
+    0 12px 28px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  font: inherit;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  touch-action: none;
+  transition:
+    transform 80ms ease,
+    filter 80ms ease,
+    box-shadow 80ms ease;
+}
+
+.mobile-control--crouch {
+  background: linear-gradient(145deg, #467a96, var(--mobile-control-crouch));
+}
+
+.mobile-control--jump {
+  background: linear-gradient(145deg, #ff8b7f, var(--mobile-control-jump));
+}
+
+.mobile-control.is-pressed {
+  transform: translateY(6px) scale(0.98);
+  filter: brightness(1.12);
+  box-shadow:
+    0 2px 0 rgba(5, 20, 31, 0.5),
+    0 6px 14px rgba(0, 0, 0, 0.24),
+    inset 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.mobile-control__icon {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 2px solid rgba(255, 255, 255, 0.75);
+  border-radius: 50%;
+  background: rgba(7, 24, 36, 0.2);
+  font-size: 28px;
+  line-height: 1;
+}
+
+.mobile-control__label {
+  font-size: clamp(13px, 3.2vw, 17px);
+  text-align: center;
+  white-space: nowrap;
+}
+
 .page-tip {
   justify-self: center;
   margin: 0;
@@ -105,6 +188,10 @@ body::after {
   letter-spacing: 0.08em;
   text-align: center;
   backdrop-filter: blur(8px);
+}
+
+body.has-mobile-controls .page-tip {
+  display: none;
 }
 
 @media (max-aspect-ratio: 4 / 3) {
@@ -128,4 +215,35 @@ body::after {
     padding: 5px 13px;
     font-size: 11px;
   }
+
+  body.has-mobile-controls .app-shell {
+    gap: 7px;
+  }
+
+  body.has-mobile-controls .game-frame {
+    width: min(960px, calc((100dvh - 100px) * 16 / 9), calc(100vw - 16px));
+  }
+
+  .mobile-controls {
+    min-height: 62px;
+    gap: clamp(16px, 10vw, 72px);
+  }
+
+  .mobile-control {
+    min-height: 58px;
+    grid-template-columns: 34px 1fr;
+    border-width: 2px;
+    border-radius: 17px;
+    padding: 6px 11px;
+    box-shadow:
+      0 5px 0 rgba(5, 20, 31, 0.42),
+      0 8px 20px rgba(0, 0, 0, 0.28);
+  }
+
+  .mobile-control__icon {
+    width: 32px;
+    height: 32px;
+    font-size: 23px;
+  }
+
 }
