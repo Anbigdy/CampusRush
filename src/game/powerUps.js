@@ -12,7 +12,7 @@ export const POWER_UPS = Object.freeze({
     texture: 'pickup-shield',
     label: '校徽护盾',
     shortLabel: '护盾',
-    duration: 9,
+    duration: Number.POSITIVE_INFINITY,
     color: 0x4ca7d8,
   }),
   rush: Object.freeze({
@@ -126,7 +126,7 @@ export class PowerUpManager {
     });
 
     const toastBackground = this.scene.add
-      .rectangle(0, 0, 286, 38, COLORS.navyDark, 0.9)
+      .rectangle(0, 0, 410, 38, COLORS.navyDark, 0.9)
       .setStrokeStyle(2, COLORS.cream, 0.9);
     this.toastText = this.scene.add
       .text(0, 0, '', {
@@ -170,6 +170,9 @@ export class PowerUpManager {
 
     const expired = [];
     this.activeEffects.forEach((remaining, id) => {
+      if (!Number.isFinite(remaining)) {
+        return;
+      }
       const nextRemaining = remaining - deltaSeconds;
       if (nextRemaining <= 0) {
         expired.push(id);
@@ -289,23 +292,54 @@ export class PowerUpManager {
     const clusterId = this.scene.time.now;
 
     pattern.forEach(({ time, xOffset, y }) => {
-      const coin = this.coins.create(startX + xOffset, y, 'pickup-coin');
-      coin.setDepth(9);
-      coin.body.setCircle(13, 2, 2);
+      const coin = this.createCoin(startX + xOffset, y);
       coin.setData('clusterId', clusterId);
       coin.setData('jumpTime', time);
-      this.scene.tweens.add({
-        targets: coin,
-        scaleX: 0.72,
-        duration: 260,
-        yoyo: true,
-        repeat: -1,
-        ease: 'Sine.InOut',
-      });
     });
 
     const arcWidth = pattern.at(-1)?.xOffset ?? 0;
     this.reserveObstacleGap(arcWidth + PICKUP_TRAILING_GAP);
+  }
+
+  createCoin(x, y) {
+    const coin = this.coins.create(x, y, 'pickup-coin');
+    coin.setDepth(9);
+    coin.body.setCircle(13, 2, 2);
+    this.scene.tweens.add({
+      targets: coin,
+      scaleX: 0.72,
+      duration: 260,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.InOut',
+    });
+    return coin;
+  }
+
+  spawnRouteCoin(x, y, routeId) {
+    const coin = this.createCoin(x, y);
+    coin.setData('routeId', routeId);
+    coin.setData('routeReward', true);
+    return coin;
+  }
+
+  spawnRewardBundle(x, y, routeId) {
+    const pickup = this.skillPickups.create(x, y, 'pickup-bundle');
+    pickup.setDepth(10);
+    pickup.setData('rewardBundle', true);
+    pickup.setData('routeId', routeId);
+    pickup.setData('routeReward', true);
+    pickup.body.setCircle(25, 4, 4);
+    this.scene.tweens.add({
+      targets: pickup,
+      scale: 1.13,
+      angle: 3,
+      duration: 480,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.InOut',
+    });
+    return pickup;
   }
 
   collectSkill(_player, pickup) {
@@ -313,10 +347,16 @@ export class PowerUpManager {
       return;
     }
 
+    const isRewardBundle = pickup.getData('rewardBundle');
     const id = pickup.getData('powerUpId');
     pickup.destroy();
-    playSound(this.scene, 'powerUp');
-    this.activate(id);
+    if (isRewardBundle) {
+      playSound(this.scene, 'bundle');
+      this.activateRewardBundle();
+    } else {
+      playSound(this.scene, 'powerUp');
+      this.activate(id);
+    }
   }
 
   collectCoin(_player, coin) {
@@ -344,6 +384,29 @@ export class PowerUpManager {
       this.rushGraceRemaining = 0;
     }
     this.showToast(`获得：${definition.label}`);
+    this.updateHud();
+    this.updatePlayerEffects();
+  }
+
+  activateRewardBundle() {
+    const bonusPool = Phaser.Utils.Array.Shuffle([
+      'rush',
+      'magnet',
+      'doubleScore',
+      'coinBonus',
+    ]).slice(0, 2);
+    const rewardIds = ['shield', ...bonusPool];
+    rewardIds.forEach((id) => {
+      this.activeEffects.set(id, POWER_UPS[id].duration);
+    });
+    if (bonusPool.includes('rush')) {
+      this.rushGraceRemaining = 0;
+    }
+
+    const points = 50 * this.getScoreMultiplier();
+    this.addScore(points, this.player.x, this.player.y - 90, `礼包 +${points}`);
+    const rewardNames = bonusPool.map((id) => POWER_UPS[id].shortLabel).join(' + ');
+    this.showToast(`大礼包：永久护盾 + ${rewardNames} · +${points}`);
     this.updateHud();
     this.updatePlayerEffects();
   }
@@ -401,15 +464,24 @@ export class PowerUpManager {
         GAMEPLAY.width / 2 - totalWidth / 2 + 48 + column * (96 + 7);
       const y = 22 + row * 34;
       const remaining = this.activeEffects.get(id);
+      const isPermanent = !Number.isFinite(remaining);
 
       entry.container.setPosition(x, y).setVisible(true);
-      entry.label.setText(`${definition.shortLabel} ${remaining.toFixed(1)}`);
+      entry.label.setText(
+        isPermanent
+          ? `${definition.shortLabel} 待命`
+          : `${definition.shortLabel} ${remaining.toFixed(1)}`,
+      );
       entry.progress.setDisplaySize(
-        Math.max(1, 88 * (remaining / definition.duration)),
+        isPermanent
+          ? 88
+          : Math.max(1, 88 * (remaining / definition.duration)),
         3,
       );
       entry.container.setAlpha(
-        remaining <= 2 && Math.floor(remaining * 6) % 2 ? 0.48 : 1,
+        !isPermanent && remaining <= 2 && Math.floor(remaining * 6) % 2
+          ? 0.48
+          : 1,
       );
     });
   }

@@ -32,6 +32,16 @@ const SOUND_LIBRARY = Object.freeze({
     { frequency: 659, endFrequency: 988, duration: 0.12, delay: 0.08, type: 'sine', volume: 0.038 },
     { frequency: 988, endFrequency: 1319, duration: 0.15, delay: 0.16, type: 'sine', volume: 0.034 },
   ],
+  bundle: [
+    { frequency: 523, duration: 0.1, type: 'triangle', volume: 0.038 },
+    { frequency: 659, duration: 0.1, delay: 0.08, type: 'triangle', volume: 0.04 },
+    { frequency: 784, duration: 0.11, delay: 0.16, type: 'sine', volume: 0.042 },
+    { frequency: 1047, duration: 0.2, delay: 0.24, type: 'sine', volume: 0.04 },
+  ],
+  platformLand: [
+    { frequency: 210, endFrequency: 145, duration: 0.08, type: 'triangle', volume: 0.026 },
+    { frequency: 420, duration: 0.06, delay: 0.035, type: 'sine', volume: 0.018 },
+  ],
   milestone: [
     { frequency: 523, duration: 0.09, type: 'sine', volume: 0.032 },
     { frequency: 659, duration: 0.09, delay: 0.075, type: 'sine', volume: 0.034 },

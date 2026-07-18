@@ -18,6 +18,7 @@ import {
   applyNormalPlayerShape,
 } from '../playerSkin.js';
 import { PowerUpManager } from '../powerUps.js';
+import { PlatformRouteManager } from '../platformRoutes.js';
 import { PICKUP_ENTRY_CLEARANCE } from '../pickupPatterns.js';
 import { readHighScore, writeHighScore } from '../storage.js';
 import {
@@ -71,6 +72,7 @@ export class GameScene extends Phaser.Scene {
     this.createObstacles();
     this.createHud();
     this.createPowerUps();
+    this.createPlatformRoutes();
     this.createInput();
 
     if (this.isIsekaiWorld) {
@@ -124,6 +126,16 @@ export class GameScene extends Phaser.Scene {
         this.addBonusScore(points, x, y, label),
       isSpawnSafe: () => this.isPickupSpawnSafe(),
       reserveObstacleGap: (distance) => this.reserveObstacleGap(distance),
+    });
+  }
+
+  createPlatformRoutes() {
+    this.platformRoutes = new PlatformRouteManager(this, {
+      player: this.player,
+      powerUps: this.powerUps,
+      canSpawnRoute: () => this.isRouteSpawnSafe(),
+      reserveObstacleGap: (distance) => this.reserveObstacleGap(distance),
+      onLand: (x, y) => this.handlePlatformLanding(x, y),
     });
   }
 
@@ -263,8 +275,7 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    const isOnGround =
-      this.player.body.blocked.down || this.player.body.touching.down;
+    const isOnGround = this.isPlayerGrounded();
     if (isOnGround) {
       this.jumpCount = 0;
     }
@@ -288,7 +299,7 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    const isOnGround = this.player.body.blocked.down || this.player.body.touching.down;
+    const isOnGround = this.isPlayerGrounded();
     if (!isOnGround) {
       return;
     }
@@ -310,8 +321,7 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    const isOnGround =
-      this.player.body.blocked.down || this.player.body.touching.down;
+    const isOnGround = this.isPlayerGrounded();
     if (isOnGround) {
       return;
     }
@@ -346,7 +356,7 @@ export class GameScene extends Phaser.Scene {
     this.isCrouching = false;
     applyNormalPlayerShape(this.player);
 
-    const isOnGround = this.player.body.blocked.down || this.player.body.touching.down;
+    const isOnGround = this.isPlayerGrounded();
     if (isOnGround && this.runState === 'playing') {
       this.player.play(PLAYER_SKIN.runAnimationKey, true);
     }
@@ -354,7 +364,7 @@ export class GameScene extends Phaser.Scene {
 
   updateCrouchInput() {
     const wantsToCrouch = this.cursors.down.isDown || this.sKey.isDown;
-    const isOnGround = this.player.body.blocked.down || this.player.body.touching.down;
+    const isOnGround = this.isPlayerGrounded();
 
     if (isOnGround) {
       const shouldRefreshStatus =
@@ -412,12 +422,38 @@ export class GameScene extends Phaser.Scene {
   }
 
   isPickupSpawnSafe() {
+    if (this.platformRoutes?.blocksIndependentPickups()) {
+      return false;
+    }
+
     let isSafe = true;
     this.obstacles.children.iterate((obstacle) => {
       if (
         obstacle?.active &&
         !obstacle.getData('resolved') &&
         obstacle.body.right > GAMEPLAY.width - PICKUP_ENTRY_CLEARANCE
+      ) {
+        isSafe = false;
+      }
+    });
+    return isSafe;
+  }
+
+  isRouteSpawnSafe() {
+    if (
+      this.runState !== 'playing' ||
+      (!this.isIsekaiWorld && this.score >= GAMEPLAY.storyTransitionScore - 140) ||
+      !this.powerUps?.isPickupEntryClear()
+    ) {
+      return false;
+    }
+
+    let isSafe = true;
+    this.obstacles.children.iterate((obstacle) => {
+      if (
+        obstacle?.active &&
+        !obstacle.getData('resolved') &&
+        obstacle.body.right > GAMEPLAY.width - 280
       ) {
         isSafe = false;
       }
@@ -437,6 +473,34 @@ export class GameScene extends Phaser.Scene {
     this.score = Math.floor(this.scoreAccumulator);
     this.scoreText.setText(String(this.score));
     this.powerUps?.showScorePopup(x, y, label);
+  }
+
+  isPlayerGrounded() {
+    return Boolean(
+      this.player?.body?.blocked.down ||
+      this.player?.body?.touching.down ||
+      this.platformRoutes?.isPlayerSupported(),
+    );
+  }
+
+  handlePlatformLanding(x, y) {
+    playSound(this, 'platformLand');
+    const dustColor = this.isIsekaiWorld ? 0xb9a5ff : 0xfff7e3;
+    [-16, 0, 16].forEach((offset, index) => {
+      const dust = this.add
+        .circle(x + offset, y - 3, 4 + index, dustColor, 0.66)
+        .setDepth(9);
+      this.tweens.add({
+        targets: dust,
+        x: dust.x + offset * 0.55,
+        y: dust.y - 14 - index * 3,
+        scale: 1.5,
+        alpha: 0,
+        duration: 260,
+        ease: 'Sine.Out',
+        onComplete: () => dust.destroy(),
+      });
+    });
   }
 
   handleObstacleCollision(_player, obstacle) {
@@ -495,6 +559,7 @@ export class GameScene extends Phaser.Scene {
 
     this.storyTriggered = true;
     this.runState = 'storyTransition';
+    this.platformRoutes.clearForTransition();
     this.powerUps.clearForTransition();
     this.stopCrouch();
     this.stopFastFall();
@@ -873,8 +938,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   updatePlayerVisuals() {
-    const isOnGround =
-      this.player.body.blocked.down || this.player.body.touching.down;
+    const isOnGround = this.isPlayerGrounded();
     if (
       isOnGround &&
       !this.isCrouching &&
@@ -887,6 +951,8 @@ export class GameScene extends Phaser.Scene {
 
     const rise = Math.max(0, GAMEPLAY.groundY - this.player.y);
     const shadowScale = Phaser.Math.Clamp(1 - rise / 230, 0.52, 1);
+    const shadowY = this.platformRoutes?.getSupportY() ?? GAMEPLAY.groundY;
+    this.playerShadow.setPosition(this.player.x, shadowY - 3);
     this.playerShadow.setScale(shadowScale, shadowScale);
     this.playerShadow.setAlpha(0.2 * shadowScale + 0.04);
   }
@@ -911,6 +977,12 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.powerUps.updateTimers(safeDeltaSeconds);
+
+    this.platformRoutes.update(
+      safeDeltaSeconds,
+      this.effectiveSpeed,
+      this.score,
+    );
 
     this.updateCrouchInput();
 
@@ -1013,6 +1085,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   shutdown() {
+    this.platformRoutes?.destroy();
     if (this.pointerJumpHandler) {
       this.input.off('pointerdown', this.pointerJumpHandler);
       this.pointerJumpHandler = null;

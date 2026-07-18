@@ -151,7 +151,7 @@ export class MenuScene extends Phaser.Scene {
       .setDepth(12);
 
     this.add
-      .text(480, 209, '二段跳越过高障碍，空中下蹲快速下坠！', {
+      .text(480, 209, '斜坡与高台路线藏着金币和大礼包！', {
         fontFamily: FONT_FAMILY,
         fontSize: '21px',
         fontStyle: 'bold',

@@ -264,6 +264,29 @@ export function createGameTextures(scene) {
     graphics.lineBetween(13, 31, 33, 31);
   });
 
+  saveTexture(scene, 'pickup-bundle', 58, 58, (graphics) => {
+    graphics.fillStyle(0x173c59, 0.24);
+    graphics.fillEllipse(29, 53, 48, 8);
+    graphics.fillStyle(0xffffff, 0.96);
+    graphics.fillCircle(29, 28, 27);
+    graphics.fillStyle(0xffa640, 1);
+    graphics.fillRoundedRect(7, 20, 44, 32, 8);
+    graphics.fillStyle(0xff6f61, 1);
+    graphics.fillRoundedRect(5, 16, 48, 12, 5);
+    graphics.fillRect(25, 16, 8, 36);
+    graphics.fillStyle(0xfff7e3, 1);
+    graphics.fillTriangle(29, 17, 14, 5, 18, 20);
+    graphics.fillTriangle(29, 17, 44, 5, 40, 20);
+    graphics.fillStyle(0xffd45f, 1);
+    graphics.fillCircle(29, 35, 8);
+    graphics.fillStyle(0xffffff, 1);
+    graphics.fillTriangle(29, 28, 31, 33, 37, 33);
+    graphics.fillTriangle(37, 33, 32, 37, 34, 43);
+    graphics.fillTriangle(34, 43, 29, 39, 24, 43);
+    graphics.fillTriangle(24, 43, 26, 37, 21, 33);
+    graphics.fillTriangle(21, 33, 27, 33, 29, 28);
+  });
+
   saveTexture(scene, 'obstacle-backpack', 52, 44, (graphics) => {
     graphics.lineStyle(5, 0x6b4434, 1);
     graphics.strokeRoundedRect(15, 2, 22, 20, 9);
