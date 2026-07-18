@@ -20,6 +20,11 @@ import {
 import { PowerUpManager } from '../powerUps.js';
 import { PlatformRouteManager } from '../platformRoutes.js';
 import { PICKUP_ENTRY_CLEARANCE } from '../pickupPatterns.js';
+import {
+  decorateObstacle,
+  getObstaclePresentationObjects,
+  updateObstaclePresentation,
+} from '../gameplayPresentation.js';
 import { readHighScore, writeHighScore } from '../storage.js';
 import {
   isSoundEnabled,
@@ -454,6 +459,7 @@ export class GameScene extends Phaser.Scene {
     obstacle.setData('label', definition.label);
     obstacle.setData('requiredAction', definition.action);
     obstacle.setData('passed', false);
+    decorateObstacle(this, obstacle, definition, GAMEPLAY.groundY);
 
     const safeGap = Phaser.Math.Between(
       GAMEPLAY.obstacleGapMin,
@@ -489,6 +495,7 @@ export class GameScene extends Phaser.Scene {
     obstacle.setData('passed', false);
     obstacle.setData('routeId', routeId);
     obstacle.setData('routeHazard', true);
+    decorateObstacle(this, obstacle, definition, surfaceY);
     return obstacle;
   }
 
@@ -687,7 +694,7 @@ export class GameScene extends Phaser.Scene {
       }
       obstacle.body.enable = false;
       this.tweens.add({
-        targets: obstacle,
+        targets: [obstacle, ...getObstaclePresentationObjects(obstacle)],
         x: obstacle.x - 220,
         alpha: 0,
         duration: 300,
@@ -1161,11 +1168,12 @@ export class GameScene extends Phaser.Scene {
     this.powerUps.updatePickups(safeDeltaSeconds, this.effectiveSpeed);
 
     this.obstacles.children.iterate((obstacle) => {
-      if (
-        !obstacle?.active ||
-        obstacle.getData('resolved') ||
-        this.runState !== 'playing'
-      ) {
+      if (!obstacle?.active) {
+        return;
+      }
+
+      updateObstaclePresentation(obstacle);
+      if (obstacle.getData('resolved') || this.runState !== 'playing') {
         return;
       }
 

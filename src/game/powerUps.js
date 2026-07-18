@@ -4,6 +4,10 @@ import {
   PICKUP_TRAILING_GAP,
   createJumpArcCoinPattern,
 } from './pickupPatterns.js';
+import {
+  decoratePickup,
+  updatePickupPresentation,
+} from './gameplayPresentation.js';
 import { playSound } from './soundEffects.js';
 
 export const POWER_UPS = Object.freeze({
@@ -218,6 +222,7 @@ export class PowerUpManager {
       if (!pickup?.active) {
         return;
       }
+      updatePickupPresentation(pickup, this.scene.time.now);
       pickup.setVelocityX(-worldSpeed);
       if (pickup.x < -70) {
         pickup.destroy();
@@ -229,6 +234,8 @@ export class PowerUpManager {
       if (!coin?.active) {
         return;
       }
+
+      updatePickupPresentation(coin, this.scene.time.now);
 
       const distance = Phaser.Math.Distance.Between(
         coin.x,
@@ -274,6 +281,7 @@ export class PowerUpManager {
     pickup.setDepth(9);
     pickup.setData('powerUpId', id);
     pickup.body.setCircle(20, 3, 3);
+    decoratePickup(this.scene, pickup, { color: definition.color });
     this.reserveObstacleGap(PICKUP_TRAILING_GAP);
 
     this.scene.tweens.add({
@@ -305,6 +313,7 @@ export class PowerUpManager {
     const coin = this.coins.create(x, y, 'pickup-coin');
     coin.setDepth(9);
     coin.body.setCircle(13, 2, 2);
+    decoratePickup(this.scene, coin, { color: 0xffc83d, kind: 'coin' });
     this.scene.tweens.add({
       targets: coin,
       scaleX: 0.72,
@@ -330,6 +339,10 @@ export class PowerUpManager {
     pickup.setData('routeId', routeId);
     pickup.setData('routeReward', true);
     pickup.body.setCircle(25, 4, 4);
+    decoratePickup(this.scene, pickup, {
+      color: 0xffa640,
+      kind: 'bundle',
+    });
     this.scene.tweens.add({
       targets: pickup,
       scale: 1.13,
