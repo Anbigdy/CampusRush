@@ -78,6 +78,10 @@ const SOUND_LIBRARY = Object.freeze({
     { frequency: 170, endFrequency: 58, duration: 0.16, type: 'sawtooth', volume: 0.043 },
     { frequency: 90, endFrequency: 46, duration: 0.2, type: 'square', volume: 0.026 },
   ],
+  snowPeakSlowdown: [
+    { frequency: 520, endFrequency: 190, duration: 0.48, type: 'triangle', volume: 0.029 },
+    { frequency: 310, endFrequency: 120, duration: 0.56, delay: 0.12, type: 'sine', volume: 0.026 },
+  ],
   snowPeakTired: [
     { frequency: 420, endFrequency: 155, duration: 0.42, type: 'triangle', volume: 0.032 },
     { frequency: 220, endFrequency: 110, duration: 0.34, delay: 0.22, type: 'sine', volume: 0.028 },

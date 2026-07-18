@@ -8,6 +8,9 @@ const FRAME_HEIGHT = 208;
 const RUNNER_SCALE = 0.38;
 const RUNNER_X = GAMEPLAY.playerX + 220;
 const EVENT_DURATION_SECONDS = 30;
+const FATIGUE_WARNING_SECONDS = 2.4;
+const SLOWDOWN_SECONDS = 3.2;
+const SLOWDOWN_X = GAMEPLAY.playerX + 90;
 const RANDOM_LINES = Object.freeze([
   '三口一个巧乐兹',
   '土木有前景',
@@ -59,7 +62,7 @@ export function prepareSnowPeak(scene) {
         key: SNOW_PEAK.textureKey,
         frame,
       })),
-      frameRate: 6,
+      frameRate: 4,
       repeat: 0,
     });
   }
@@ -128,6 +131,9 @@ export class SnowPeakEvent {
     this.state = 'waiting';
     this.activeRemaining = 0;
     this.speechRemaining = 0;
+    this.fatigueRemaining = 0;
+    this.slowdownRemaining = 0;
+    this.slowdownStartX = RUNNER_X;
     this.lastRandomLine = null;
     this.bubble = null;
     this.bubbleTimer = null;
@@ -182,11 +188,36 @@ export class SnowPeakEvent {
       );
       this.deflectBlockingObstacles();
 
-      if (this.speechRemaining <= 0) {
+      if (this.activeRemaining <= 0) {
+        this.startFatigueWarning();
+      } else if (this.speechRemaining <= 0) {
         this.showRandomLine();
         this.speechRemaining = Phaser.Math.FloatBetween(4.2, 6.4);
       }
-      if (this.activeRemaining <= 0) {
+    } else if (this.state === 'fatigueWarning') {
+      this.fatigueRemaining = Math.max(
+        0,
+        this.fatigueRemaining - deltaSeconds,
+      );
+      this.deflectBlockingObstacles();
+      if (this.fatigueRemaining <= 0) {
+        this.startSlowdown();
+      }
+    } else if (this.state === 'slowing') {
+      this.slowdownRemaining = Math.max(
+        0,
+        this.slowdownRemaining - deltaSeconds,
+      );
+      const progress = 1 - this.slowdownRemaining / SLOWDOWN_SECONDS;
+      const easedProgress = Phaser.Math.Easing.Cubic.Out(progress);
+      this.sprite.x = Phaser.Math.Linear(
+        this.slowdownStartX,
+        SLOWDOWN_X,
+        easedProgress,
+      );
+      this.sprite.anims.timeScale = Phaser.Math.Linear(0.55, 0.28, progress);
+      this.deflectBlockingObstacles();
+      if (this.slowdownRemaining <= 0) {
         this.startExhaustion();
       }
     } else if (this.state === 'pickup') {
@@ -270,8 +301,32 @@ export class SnowPeakEvent {
     this.showSpeech(line, 2100, 0x8fffe0);
   }
 
-  startExhaustion() {
+  startFatigueWarning() {
     if (this.state !== 'running') {
+      return;
+    }
+
+    this.state = 'fatigueWarning';
+    this.fatigueRemaining = FATIGUE_WARNING_SECONDS;
+    this.statusLabel.setText('SNOW PEAK · 状态异常');
+    this.showSpeech('怎么嘴巴紫紫的', 2300, 0xa884ff);
+  }
+
+  startSlowdown() {
+    if (this.state !== 'fatigueWarning') {
+      return;
+    }
+
+    this.state = 'slowing';
+    this.slowdownRemaining = SLOWDOWN_SECONDS;
+    this.slowdownStartX = this.sprite.x;
+    this.sprite.anims.timeScale = 0.55;
+    this.statusLabel.setText('SNOW PEAK · 突然慢下来了');
+    playSound(this.scene, 'snowPeakSlowdown');
+  }
+
+  startExhaustion() {
+    if (this.state !== 'slowing') {
       return;
     }
 
@@ -280,9 +335,10 @@ export class SnowPeakEvent {
     this.statusLabel.setText('SNOW PEAK · 体力耗尽');
     this.pauseGame();
     playSound(this.scene, 'snowPeakTired');
+    this.sprite.anims.timeScale = 1;
     this.sprite.play(SNOW_PEAK.fallAnimationKey, true);
 
-    this.scene.time.delayedCall(950, () => {
+    this.scene.time.delayedCall(1350, () => {
       if (this.destroyed || this.state !== 'exhausted') {
         return;
       }
@@ -290,7 +346,7 @@ export class SnowPeakEvent {
       this.sprite.setFrame(SNOW_PEAK.tiredFrame);
       this.showSpeech('张雪峰老师，我还记得你🎵', 2600, 0xb9a5ff);
     });
-    this.scene.time.delayedCall(3350, () => this.becomePickup());
+    this.scene.time.delayedCall(4200, () => this.becomePickup());
   }
 
   becomePickup() {
