@@ -225,6 +225,39 @@ export function createGameTextures(scene) {
     graphics.fillTriangle(68, 3, 76, 1, 73, 7);
   });
 
+  saveTexture(scene, 'obstacle-cone', 44, 62, (graphics) => {
+    graphics.fillStyle(0x2e4053, 0.22);
+    graphics.fillEllipse(22, 58, 42, 8);
+    graphics.fillStyle(0xe97032, 1);
+    graphics.fillRoundedRect(2, 52, 40, 8, 3);
+    graphics.fillTriangle(8, 52, 22, 2, 36, 52);
+    graphics.fillStyle(0xfff7e3, 1);
+    graphics.fillTriangle(13, 35, 17, 22, 27, 22);
+    graphics.fillTriangle(13, 35, 27, 22, 31, 35);
+    graphics.lineStyle(2, 0xc95729, 0.9);
+    graphics.lineBetween(8, 52, 22, 2);
+    graphics.lineBetween(22, 2, 36, 52);
+  });
+
+  saveTexture(scene, 'obstacle-books', 70, 34, (graphics) => {
+    graphics.fillStyle(0x24394b, 0.18);
+    graphics.fillEllipse(35, 31, 68, 6);
+    graphics.fillStyle(0x356d89, 1);
+    graphics.fillRoundedRect(3, 23, 63, 9, 3);
+    graphics.fillStyle(0xe9f9ff, 1);
+    graphics.fillRect(9, 24, 53, 5);
+    graphics.fillStyle(COLORS.coral, 1);
+    graphics.fillRoundedRect(9, 12, 58, 11, 3);
+    graphics.fillStyle(0xfff7e3, 1);
+    graphics.fillRect(14, 14, 48, 6);
+    graphics.fillStyle(COLORS.orange, 1);
+    graphics.fillRoundedRect(1, 2, 55, 11, 3);
+    graphics.fillStyle(0xfff7e3, 1);
+    graphics.fillRect(7, 4, 44, 6);
+    graphics.lineStyle(2, 0xb15d30, 0.7);
+    graphics.lineBetween(8, 3, 8, 12);
+  });
+
   saveTexture(scene, 'obstacle-basketball', 56, 36, (graphics) => {
     graphics.lineStyle(3, 0xffc66b, 0.72);
     graphics.lineBetween(35, 10, 54, 10);
@@ -240,6 +273,53 @@ export function createGameTextures(scene) {
     graphics.arc(28, 18, 13, 2.05, 4.25);
     graphics.fillStyle(0xffbf54, 0.72);
     graphics.fillCircle(10, 10, 4);
+  });
+
+  saveTexture(scene, 'obstacle-low-banner', 78, 330, (graphics) => {
+    graphics.lineStyle(5, 0x315870, 0.9);
+    graphics.lineBetween(14, 0, 20, 26);
+    graphics.lineBetween(64, 0, 58, 26);
+    graphics.fillStyle(0x173c59, 1);
+    graphics.fillRoundedRect(4, 22, 70, 272, 8);
+    graphics.fillStyle(COLORS.coral, 1);
+    graphics.fillRoundedRect(9, 28, 60, 260, 6);
+    graphics.fillStyle(0xffd26a, 1);
+    graphics.fillRect(9, 72, 60, 17);
+    graphics.fillRect(9, 226, 60, 17);
+    graphics.fillStyle(COLORS.cream, 1);
+    graphics.fillCircle(39, 144, 19);
+    graphics.fillTriangle(39, 176, 25, 153, 53, 153);
+    graphics.fillStyle(0x173c59, 1);
+    graphics.fillTriangle(39, 194, 29, 177, 49, 177);
+    graphics.fillStyle(COLORS.white, 0.78);
+    graphics.fillRoundedRect(18, 253, 42, 5, 2);
+    graphics.fillRoundedRect(24, 265, 30, 5, 2);
+  });
+
+  saveTexture(scene, 'obstacle-low-branch', 104, 220, (graphics) => {
+    graphics.lineStyle(17, 0x76513a, 1);
+    graphics.lineBetween(-8, 26, 112, 72);
+    graphics.lineStyle(11, 0x8e6444, 1);
+    graphics.lineBetween(49, 49, 67, 134);
+    graphics.lineBetween(78, 60, 91, 125);
+    graphics.fillStyle(0x2f7547, 1);
+    graphics.fillCircle(16, 42, 30);
+    graphics.fillCircle(46, 62, 34);
+    graphics.fillCircle(80, 78, 31);
+    graphics.fillCircle(93, 112, 25);
+    graphics.fillCircle(67, 128, 29);
+    graphics.fillStyle(0x62b85f, 1);
+    graphics.fillCircle(28, 68, 22);
+    graphics.fillCircle(68, 91, 23);
+    graphics.fillCircle(82, 143, 23);
+    graphics.fillStyle(0xa8db74, 0.9);
+    graphics.fillCircle(19, 49, 8);
+    graphics.fillCircle(60, 78, 8);
+    graphics.fillCircle(84, 131, 7);
+    graphics.lineStyle(4, 0x76513a, 1);
+    graphics.lineBetween(66, 132, 66, 178);
+    graphics.fillStyle(COLORS.orange, 1);
+    graphics.fillEllipse(66, 175, 10, 6);
   });
 
   saveTexture(scene, 'ground-tile', 240, 90, (graphics) => {

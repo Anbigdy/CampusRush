@@ -23,6 +23,7 @@ export class GameScene extends Phaser.Scene {
     this.pointerJumpHandler = null;
     this.isNewRecord = false;
     this.isCrouching = false;
+    this.lastObstacleKey = null;
   }
 
   create() {
@@ -237,7 +238,11 @@ export class GameScene extends Phaser.Scene {
   }
 
   spawnObstacle() {
-    const definition = Phaser.Utils.Array.GetRandom(OBSTACLES);
+    const availableObstacles = OBSTACLES.filter(
+      ({ key }) => key !== this.lastObstacleKey,
+    );
+    const definition = Phaser.Utils.Array.GetRandom(availableObstacles);
+    this.lastObstacleKey = definition.key;
     const x = GAMEPLAY.width + 20 + definition.width / 2;
     const y =
       definition.placement === 'air'
@@ -252,7 +257,7 @@ export class GameScene extends Phaser.Scene {
     obstacle.body.setOffset(definition.body.offsetX, definition.body.offsetY);
     obstacle.setVelocityX(-this.currentSpeed);
     obstacle.setData('label', definition.label);
-    obstacle.setData('requiresCrouch', definition.placement === 'air');
+    obstacle.setData('requiredAction', definition.action);
 
     const safeGap = Phaser.Math.Between(
       GAMEPLAY.obstacleGapMin,
@@ -446,8 +451,18 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.obstacles.children.iterate((obstacle) => {
-      if (!obstacle?.active) {
+      if (!obstacle?.active || this.runState !== 'playing') {
         return;
+      }
+
+      if (obstacle.getData('requiredAction') === 'crouch') {
+        const reachesPlayer =
+          obstacle.body.left < this.player.body.right &&
+          obstacle.body.right > this.player.body.left;
+        if (reachesPlayer && !this.isCrouching) {
+          this.endGame();
+          return;
+        }
       }
 
       obstacle.setVelocityX(-this.currentSpeed);

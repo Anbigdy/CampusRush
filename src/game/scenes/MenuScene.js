@@ -113,7 +113,7 @@ export class MenuScene extends Phaser.Scene {
       .setDepth(12);
 
     this.add
-      .text(480, 209, '一路向前，跳过校园里的小麻烦！', {
+      .text(480, 209, '地面障碍要跳，低垂障碍必须下蹲！', {
         fontFamily: FONT_FAMILY,
         fontSize: '21px',
         fontStyle: 'bold',
