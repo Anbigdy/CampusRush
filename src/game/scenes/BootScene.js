@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { loadBackgroundMusic } from '../backgroundMusic.js';
 import { createGameTextures } from '../createTextures.js';
 import { loadPlayerSkin, preparePlayerSkin } from '../playerSkin.js';
 
@@ -9,6 +10,7 @@ export class BootScene extends Phaser.Scene {
 
   preload() {
     loadPlayerSkin(this);
+    loadBackgroundMusic(this);
   }
 
   create() {
