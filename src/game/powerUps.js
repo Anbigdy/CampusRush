@@ -482,48 +482,66 @@ export class PowerUpManager {
   showHajimiReveal() {
     this.clearHajimiReveal();
     const texture = Phaser.Utils.Array.GetRandom(HAJIMI_ASSETS).key;
+    const centerX = GAMEPLAY.width / 2;
+    const centerY = GAMEPLAY.height / 2;
     const shadow = this.scene.add
-      .rectangle(6, 7, 154, 174, COLORS.navyDark, 0.34)
+      .rectangle(10, 12, 326, 326, COLORS.navyDark, 0.38)
       .setStrokeStyle(0);
     const panel = this.scene.add
-      .rectangle(0, 0, 154, 174, COLORS.cream, 0.98)
-      .setStrokeStyle(4, 0xffd45f, 1);
+      .rectangle(0, 0, 326, 326, COLORS.cream, 1)
+      .setStrokeStyle(7, 0xffd45f, 1);
     const image = this.scene.add
-      .image(0, -10, texture)
-      .setDisplaySize(132, 132);
+      .image(0, 0, texture)
+      .setDisplaySize(300, 300);
     const label = this.scene.add
-      .text(0, 73, '哈基米！', {
+      .text(0, 188, '哈基米！', {
         fontFamily: FONT_FAMILY,
-        fontSize: '18px',
+        fontSize: '28px',
         fontStyle: 'bold',
-        color: '#173c59',
-        stroke: '#fff7e3',
-        strokeThickness: 3,
+        color: '#fff7e3',
+        stroke: '#173c59',
+        strokeThickness: 6,
       })
       .setOrigin(0.5);
 
     this.hajimiReveal = this.scene.add
-      .container(GAMEPLAY.width / 2, 164, [
+      .container(centerX, centerY, [
         shadow,
         panel,
         image,
         label,
       ])
-      .setDepth(80)
+      .setDepth(120)
       .setScrollFactor(0)
-      .setScale(0.25)
+      .setScale(0.18)
+      .setAngle(-7)
       .setAlpha(0);
 
     playHakimiMeow(this.scene, isSoundEnabled());
     this.scene.tweens.add({
       targets: this.hajimiReveal,
-      scale: 1,
+      scaleX: 1,
+      scaleY: 1,
+      angle: 4,
       alpha: 1,
-      duration: 180,
+      duration: 360,
       ease: 'Back.Out',
-      hold: 820,
-      yoyo: true,
-      onComplete: () => this.clearHajimiReveal(),
+      onComplete: () => {
+        if (!this.hajimiReveal) {
+          return;
+        }
+        this.scene.tweens.add({
+          targets: this.hajimiReveal,
+          scaleX: 1.18,
+          scaleY: 1.18,
+          angle: -3,
+          alpha: 0,
+          delay: 720,
+          duration: 460,
+          ease: 'Sine.In',
+          onComplete: () => this.clearHajimiReveal(),
+        });
+      },
     });
   }
 
