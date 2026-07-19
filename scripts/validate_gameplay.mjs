@@ -24,10 +24,12 @@ import {
 import { SNOW_PEAK_RANDOM_LINES } from '../src/game/snowPeakDialogue.js';
 import {
   BLIND_BOX_OUTCOMES,
+  HAJIMI_REVEAL_COMPOSITIONS,
   HAJIMI_REVEAL_EFFECTS,
   HAJIMI_REVEAL_MOTIONS,
   HAJIMI_REVEAL_TIER_WEIGHTS,
   HAKIMI_OUTCOME_PROBABILITY,
+  selectHajimiRevealComposition,
   selectHajimiRevealMotion,
   selectBlindBoxOutcome,
 } from '../src/game/blindBox.js';
@@ -406,6 +408,30 @@ const revealTierCounts = Object.fromEntries(
     HAJIMI_REVEAL_MOTIONS.filter((motion) => motion.tier === id).length,
   ]),
 );
+const revealCompositionIds = new Set(
+  HAJIMI_REVEAL_COMPOSITIONS.map((composition) => composition.id),
+);
+const revealCompositionTierCounts = Object.fromEntries(
+  HAJIMI_REVEAL_TIER_WEIGHTS.map(({ id }) => [
+    id,
+    HAJIMI_REVEAL_COMPOSITIONS.filter(
+      (composition) => composition.tier === id,
+    ).length,
+  ]),
+);
+const hasOffCenterComposition = HAJIMI_REVEAL_COMPOSITIONS.some(
+  (composition) => Math.abs(composition.enter.x - 480) >= 180,
+);
+const hasHorizontalFlyThrough = HAJIMI_REVEAL_COMPOSITIONS.some(
+  (composition) =>
+    (composition.start.x < 0 && composition.exit.x > 960) ||
+    (composition.start.x > 960 && composition.exit.x < 0),
+);
+const hasVerticalOrDiagonalEntry = HAJIMI_REVEAL_COMPOSITIONS.some(
+  (composition) =>
+    composition.start.y < 0 ||
+    composition.start.y > 540,
+);
 const hasTranslation = HAJIMI_REVEAL_MOTIONS.some(
   (motion) =>
     Math.abs(motion.start.x - motion.enter.x) >= 300 ||
@@ -446,6 +472,14 @@ if (
   revealTierCounts.gentle < 3 ||
   revealTierCounts.lively < 3 ||
   revealTierCounts.explosive < 7 ||
+  HAJIMI_REVEAL_COMPOSITIONS.length < 9 ||
+  revealCompositionIds.size !== HAJIMI_REVEAL_COMPOSITIONS.length ||
+  revealCompositionTierCounts.gentle < 3 ||
+  revealCompositionTierCounts.lively < 3 ||
+  revealCompositionTierCounts.explosive < 3 ||
+  !hasOffCenterComposition ||
+  !hasHorizontalFlyThrough ||
+  !hasVerticalOrDiagonalEntry ||
   !hasTranslation ||
   !hasMirrorFlip ||
   !hasNonUniformScale ||
@@ -462,7 +496,10 @@ if (
   selectHajimiRevealMotion(0.3).tier !== 'lively' ||
   selectHajimiRevealMotion(0.599999).tier !== 'lively' ||
   selectHajimiRevealMotion(0.6).tier !== 'explosive' ||
-  selectHajimiRevealMotion(1).tier !== 'explosive'
+  selectHajimiRevealMotion(1).tier !== 'explosive' ||
+  selectHajimiRevealComposition('gentle', 0).id !== 'left-perch' ||
+  selectHajimiRevealComposition('lively', 0).id !== 'left-to-right' ||
+  selectHajimiRevealComposition('explosive', 1).id !== 'screen-sweep'
 ) {
   failures.push('Hakimi reveal motion library lacks transform variety');
 }
@@ -502,7 +539,7 @@ if (failures.length) {
         hakimiVoiceChecks: 4,
         snowPeakDialogueChecks: 1,
         audioAssetsChecked: 1,
-        blindBoxChecks: 22 + blindBoxBoundaryChecks.length,
+        blindBoxChecks: 34 + blindBoxBoundaryChecks.length,
         pickupSpawnChecks: 2,
         pauseStateChecks: 1,
         hajimiPortraitsChecked: HAJIMI_ASSETS.length,

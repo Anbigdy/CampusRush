@@ -10,6 +10,7 @@ import {
 } from './gameplayPresentation.js';
 import {
   HAJIMI_REVEAL_EFFECTS,
+  selectHajimiRevealComposition,
   selectHajimiRevealMotion,
   selectBlindBoxOutcome,
 } from './blindBox.js';
@@ -510,8 +511,7 @@ export class PowerUpManager {
     const texture = Phaser.Utils.Array.GetRandom(HAJIMI_ASSETS).key;
     const motion = selectHajimiRevealMotion();
     const effects = HAJIMI_REVEAL_EFFECTS[motion.tier];
-    const centerX = GAMEPLAY.width / 2;
-    const centerY = GAMEPLAY.height / 2;
+    const composition = selectHajimiRevealComposition(motion.tier);
     const shadow = this.scene.add
       .rectangle(10, 12, 326, 326, COLORS.navyDark, 0.38)
       .setStrokeStyle(0);
@@ -543,13 +543,19 @@ export class PowerUpManager {
     label.setScale(effects.labelStartScale).setAlpha(0);
 
     const impactRing = this.scene.add
-      .circle(centerX, centerY, 70, 0xffd45f, 0)
+      .circle(composition.enter.x, composition.enter.y, 70, 0xffd45f, 0)
       .setStrokeStyle(14, 0xffd45f, 1)
       .setDepth(118)
       .setScale(0.18);
     const impactRingOuter = effects.ringCount > 1
       ? this.scene.add
-        .circle(centerX, centerY, 105, 0xff6f61, 0)
+        .circle(
+          composition.enter.x,
+          composition.enter.y,
+          105,
+          0xff6f61,
+          0,
+        )
         .setStrokeStyle(8, 0xff6f61, 0.9)
         .setDepth(117)
         .setScale(0.12)
@@ -557,17 +563,19 @@ export class PowerUpManager {
     this.hajimiRevealImpact = [impactRing, impactRingOuter].filter(Boolean);
 
     this.hajimiReveal = this.scene.add
-      .container(centerX, centerY, [
+      .container(composition.start.x, composition.start.y, [
         shadow,
         panel,
         imageMotion,
         label,
       ])
       .setDepth(120)
-      .setScale(0.12)
-      .setAlpha(0);
+      .setAngle(composition.start.angle)
+      .setScale(composition.start.scaleX, composition.start.scaleY)
+      .setAlpha(composition.start.alpha);
     this.hajimiRevealImageMotion = imageMotion;
     this.hajimiRevealMotionId = motion.id;
+    this.hajimiRevealCompositionId = composition.id;
 
     playHakimiMeow(this.scene, isSoundEnabled());
     if (effects.flashDuration > 0) {
@@ -622,9 +630,7 @@ export class PowerUpManager {
     });
     this.scene.tweens.add({
       targets: this.hajimiReveal,
-      scaleX: 1,
-      scaleY: 1,
-      alpha: 1,
+      ...composition.enter,
       duration: motion.enterDuration,
       ease: 'Back.Out',
       onComplete: () => {
@@ -640,9 +646,7 @@ export class PowerUpManager {
         });
         this.scene.tweens.add({
           targets: this.hajimiReveal,
-          scaleX: 1.08,
-          scaleY: 1.08,
-          alpha: 0,
+          ...composition.exit,
           delay: motion.holdDuration,
           duration: motion.exitDuration,
           ease: 'Sine.In',
@@ -673,6 +677,7 @@ export class PowerUpManager {
     this.hajimiRevealLabel = null;
     this.hajimiRevealImpact = null;
     this.hajimiRevealMotionId = null;
+    this.hajimiRevealCompositionId = null;
   }
 
   showToast(message) {

@@ -18,6 +18,15 @@ function freezeRevealMotion(motion) {
   });
 }
 
+function freezeRevealComposition(composition) {
+  return Object.freeze({
+    ...composition,
+    start: Object.freeze(composition.start),
+    enter: Object.freeze(composition.enter),
+    exit: Object.freeze(composition.exit),
+  });
+}
+
 export const HAJIMI_REVEAL_TIER_WEIGHTS = Object.freeze([
   Object.freeze({ id: 'gentle', probability: 0.3 }),
   Object.freeze({ id: 'lively', probability: 0.3 }),
@@ -216,6 +225,72 @@ export const HAJIMI_REVEAL_EFFECTS = Object.freeze({
   }),
 });
 
+export const HAJIMI_REVEAL_COMPOSITIONS = Object.freeze([
+  freezeRevealComposition({
+    id: 'left-perch',
+    tier: 'gentle',
+    start: { x: -220, y: 250, angle: -8, scaleX: 0.68, scaleY: 0.68, alpha: 0 },
+    enter: { x: 210, y: 245, angle: -3, scaleX: 0.72, scaleY: 0.72, alpha: 1 },
+    exit: { x: 150, y: 220, angle: -7, scaleX: 0.66, scaleY: 0.66, alpha: 0 },
+  }),
+  freezeRevealComposition({
+    id: 'right-perch',
+    tier: 'gentle',
+    start: { x: 1180, y: 250, angle: 8, scaleX: 0.68, scaleY: 0.68, alpha: 0 },
+    enter: { x: 750, y: 245, angle: 3, scaleX: 0.72, scaleY: 0.72, alpha: 1 },
+    exit: { x: 810, y: 220, angle: 7, scaleX: 0.66, scaleY: 0.66, alpha: 0 },
+  }),
+  freezeRevealComposition({
+    id: 'top-drift',
+    tier: 'gentle',
+    start: { x: 440, y: -250, angle: -4, scaleX: 0.66, scaleY: 0.66, alpha: 0 },
+    enter: { x: 480, y: 220, angle: 2, scaleX: 0.72, scaleY: 0.72, alpha: 1 },
+    exit: { x: 550, y: 175, angle: 5, scaleX: 0.66, scaleY: 0.66, alpha: 0 },
+  }),
+  freezeRevealComposition({
+    id: 'left-to-right',
+    tier: 'lively',
+    start: { x: -260, y: 275, angle: -18, scaleX: 0.66, scaleY: 0.66, alpha: 0 },
+    enter: { x: 280, y: 240, angle: 4, scaleX: 0.82, scaleY: 0.82, alpha: 1 },
+    exit: { x: 1220, y: 205, angle: 34, scaleX: 0.7, scaleY: 0.7, alpha: 0 },
+  }),
+  freezeRevealComposition({
+    id: 'right-to-left',
+    tier: 'lively',
+    start: { x: 1220, y: 235, angle: 18, scaleX: 0.66, scaleY: 0.66, alpha: 0 },
+    enter: { x: 680, y: 250, angle: -4, scaleX: 0.82, scaleY: 0.82, alpha: 1 },
+    exit: { x: -260, y: 290, angle: -34, scaleX: 0.7, scaleY: 0.7, alpha: 0 },
+  }),
+  freezeRevealComposition({
+    id: 'bottom-hop',
+    tier: 'lively',
+    start: { x: 420, y: 760, angle: -12, scaleX: 0.62, scaleY: 0.62, alpha: 0 },
+    enter: { x: 480, y: 235, angle: 3, scaleX: 0.84, scaleY: 0.84, alpha: 1 },
+    exit: { x: 790, y: -280, angle: 45, scaleX: 0.66, scaleY: 0.66, alpha: 0 },
+  }),
+  freezeRevealComposition({
+    id: 'diagonal-blast',
+    tier: 'explosive',
+    start: { x: -360, y: 760, angle: -70, scaleX: 0.38, scaleY: 0.38, alpha: 0.5 },
+    enter: { x: 340, y: 250, angle: 8, scaleX: 0.96, scaleY: 0.96, alpha: 1 },
+    exit: { x: 1320, y: -380, angle: 140, scaleX: 1.25, scaleY: 0.35, alpha: 0 },
+  }),
+  freezeRevealComposition({
+    id: 'sky-crash',
+    tier: 'explosive',
+    start: { x: 790, y: -480, angle: 105, scaleX: 0.35, scaleY: 1.45, alpha: 0.7 },
+    enter: { x: 620, y: 245, angle: -7, scaleX: 1, scaleY: 1, alpha: 1 },
+    exit: { x: -420, y: 720, angle: -160, scaleX: 0.4, scaleY: 1.6, alpha: 0 },
+  }),
+  freezeRevealComposition({
+    id: 'screen-sweep',
+    tier: 'explosive',
+    start: { x: -380, y: 150, angle: -45, scaleX: 1.5, scaleY: 0.22, alpha: 0.65 },
+    enter: { x: 480, y: 245, angle: 0, scaleX: 0.98, scaleY: 0.98, alpha: 1 },
+    exit: { x: 1340, y: 390, angle: 65, scaleX: 1.7, scaleY: 0.18, alpha: 0 },
+  }),
+]);
+
 export function selectHajimiRevealMotion(randomValue = Math.random()) {
   const roll = Math.min(1 - Number.EPSILON, Math.max(0, randomValue));
   let tierStart = 0;
@@ -238,6 +313,20 @@ export function selectHajimiRevealMotion(randomValue = Math.random()) {
   }
 
   return HAJIMI_REVEAL_MOTIONS.at(-1);
+}
+
+export function selectHajimiRevealComposition(
+  tier,
+  randomValue = Math.random(),
+) {
+  const compositions = HAJIMI_REVEAL_COMPOSITIONS.filter(
+    (composition) => composition.tier === tier,
+  );
+  const normalized = Math.min(
+    1 - Number.EPSILON,
+    Math.max(0, randomValue),
+  );
+  return compositions[Math.floor(normalized * compositions.length)];
 }
 
 export function selectBlindBoxOutcome(randomValue = Math.random()) {
