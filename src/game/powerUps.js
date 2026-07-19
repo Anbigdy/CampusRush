@@ -9,6 +9,7 @@ import {
   updatePickupPresentation,
 } from './gameplayPresentation.js';
 import {
+  HAJIMI_REVEAL_IMPACT,
   selectHajimiRevealMotion,
   selectBlindBoxOutcome,
 } from './blindBox.js';
@@ -516,7 +517,12 @@ export class PowerUpManager {
     const panel = this.scene.add
       .rectangle(0, 0, 326, 326, COLORS.cream, 1)
       .setStrokeStyle(7, 0xffd45f, 1);
-    const image = this.scene.add.image(0, 0, texture).setDisplaySize(300, 300);
+    const image = this.scene.add
+      .image(0, 0, texture)
+      .setDisplaySize(
+        HAJIMI_REVEAL_IMPACT.imageSize,
+        HAJIMI_REVEAL_IMPACT.imageSize,
+      );
     const imageMotion = this.scene.add.container(0, 0, [image]);
     imageMotion
       .setPosition(motion.start.x, motion.start.y)
@@ -533,6 +539,19 @@ export class PowerUpManager {
         strokeThickness: 6,
       })
       .setOrigin(0.5);
+    label.setScale(2.8).setAlpha(0);
+
+    const impactRing = this.scene.add
+      .circle(centerX, centerY, 70, 0xffd45f, 0)
+      .setStrokeStyle(14, 0xffd45f, 1)
+      .setDepth(118)
+      .setScale(0.18);
+    const impactRingOuter = this.scene.add
+      .circle(centerX, centerY, 105, 0xff6f61, 0)
+      .setStrokeStyle(8, 0xff6f61, 0.9)
+      .setDepth(117)
+      .setScale(0.12);
+    this.hajimiRevealImpact = [impactRing, impactRingOuter];
 
     this.hajimiReveal = this.scene.add
       .container(centerX, centerY, [
@@ -548,6 +567,44 @@ export class PowerUpManager {
     this.hajimiRevealMotionId = motion.id;
 
     playHakimiMeow(this.scene, isSoundEnabled());
+    this.scene.cameras.main.flash(
+      HAJIMI_REVEAL_IMPACT.flashDuration,
+      255,
+      225,
+      96,
+      false,
+    );
+    this.scene.cameras.main.shake(
+      HAJIMI_REVEAL_IMPACT.shakeDuration,
+      HAJIMI_REVEAL_IMPACT.shakeIntensity,
+    );
+    this.scene.tweens.add({
+      targets: impactRing,
+      scaleX: HAJIMI_REVEAL_IMPACT.ringScale,
+      scaleY: HAJIMI_REVEAL_IMPACT.ringScale,
+      alpha: 0,
+      duration: HAJIMI_REVEAL_IMPACT.ringDuration,
+      ease: 'Expo.Out',
+    });
+    this.scene.tweens.add({
+      targets: impactRingOuter,
+      scaleX: HAJIMI_REVEAL_IMPACT.ringScale * 1.15,
+      scaleY: HAJIMI_REVEAL_IMPACT.ringScale * 1.15,
+      alpha: 0,
+      delay: 55,
+      duration: HAJIMI_REVEAL_IMPACT.ringDuration,
+      ease: 'Expo.Out',
+    });
+    this.hajimiRevealLabel = label;
+    this.scene.tweens.add({
+      targets: label,
+      scaleX: 1,
+      scaleY: 1,
+      alpha: 1,
+      delay: 90,
+      duration: 260,
+      ease: 'Back.Out',
+    });
     this.scene.tweens.add({
       targets: imageMotion,
       ...motion.enter,
@@ -593,10 +650,19 @@ export class PowerUpManager {
     if (this.hajimiRevealImageMotion) {
       this.scene.tweens.killTweensOf(this.hajimiRevealImageMotion);
     }
+    if (this.hajimiRevealLabel) {
+      this.scene.tweens.killTweensOf(this.hajimiRevealLabel);
+    }
+    this.hajimiRevealImpact?.forEach((impact) => {
+      this.scene.tweens.killTweensOf(impact);
+      impact.destroy();
+    });
     this.scene.tweens.killTweensOf(this.hajimiReveal);
     this.hajimiReveal.destroy(true);
     this.hajimiReveal = null;
     this.hajimiRevealImageMotion = null;
+    this.hajimiRevealLabel = null;
+    this.hajimiRevealImpact = null;
     this.hajimiRevealMotionId = null;
   }
 

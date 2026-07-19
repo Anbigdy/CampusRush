@@ -24,6 +24,7 @@ import {
 import { SNOW_PEAK_RANDOM_LINES } from '../src/game/snowPeakDialogue.js';
 import {
   BLIND_BOX_OUTCOMES,
+  HAJIMI_REVEAL_IMPACT,
   HAJIMI_REVEAL_MOTIONS,
   HAKIMI_OUTCOME_PROBABILITY,
   selectHajimiRevealMotion,
@@ -409,7 +410,23 @@ const hasNonUniformScale = HAJIMI_REVEAL_MOTIONS.some(
 );
 const hasMultiTurnSpin = HAJIMI_REVEAL_MOTIONS.some(
   (motion) =>
-    Math.abs(motion.enter.angle - motion.start.angle) >= 1080,
+    Math.abs(motion.enter.angle - motion.start.angle) >= 2160,
+);
+const maximumTranslation = Math.max(
+  ...HAJIMI_REVEAL_MOTIONS.flatMap((motion) => [
+    Math.abs(motion.start.x - motion.enter.x),
+    Math.abs(motion.start.y - motion.enter.y),
+    Math.abs(motion.exit.x - motion.enter.x),
+    Math.abs(motion.exit.y - motion.enter.y),
+  ]),
+);
+const maximumStretch = Math.max(
+  ...HAJIMI_REVEAL_MOTIONS.flatMap((motion) => [
+    Math.abs(motion.start.scaleX),
+    Math.abs(motion.start.scaleY),
+    Math.abs(motion.exit.scaleX),
+    Math.abs(motion.exit.scaleY),
+  ]),
 );
 if (
   HAJIMI_REVEAL_MOTIONS.length < 7 ||
@@ -418,6 +435,11 @@ if (
   !hasMirrorFlip ||
   !hasNonUniformScale ||
   !hasMultiTurnSpin ||
+  maximumTranslation < 900 ||
+  maximumStretch < 5 ||
+  HAJIMI_REVEAL_IMPACT.imageSize < 380 ||
+  HAJIMI_REVEAL_IMPACT.shakeIntensity < 0.02 ||
+  HAJIMI_REVEAL_IMPACT.ringScale < 4 ||
   selectHajimiRevealMotion(0) !== HAJIMI_REVEAL_MOTIONS[0] ||
   selectHajimiRevealMotion(1) !== HAJIMI_REVEAL_MOTIONS.at(-1)
 ) {
@@ -459,7 +481,7 @@ if (failures.length) {
         hakimiVoiceChecks: 4,
         snowPeakDialogueChecks: 1,
         audioAssetsChecked: 1,
-        blindBoxChecks: 8 + blindBoxBoundaryChecks.length,
+        blindBoxChecks: 13 + blindBoxBoundaryChecks.length,
         pickupSpawnChecks: 2,
         pauseStateChecks: 1,
         hajimiPortraitsChecked: HAJIMI_ASSETS.length,
