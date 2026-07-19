@@ -16,6 +16,7 @@ import {
   prepareSnowPeak,
 } from '../snowPeakEvent.js';
 import { HAKIMI_AUDIO } from '../snowPeakAudio.js';
+import { loadHajimiAssets } from '../hajimiAssets.js';
 
 const ASSET_PROGRESS_START = 0.18;
 const ASSET_PROGRESS_SPAN = 0.74;
@@ -39,12 +40,12 @@ function getFileStatus(file) {
   if (file.key === 'campus-rush-theme') {
     return '正在调试随身听…';
   }
-    if (file.key === SNOW_PEAK.textureKey) {
-      return '正在寻找 Snow Peak…';
-    }
-    if (file.key === HAKIMI_AUDIO.key) {
-      return '正在叫醒哈基米…';
-    }
+  if (file.key === SNOW_PEAK.textureKey) {
+    return '正在寻找 Snow Peak…';
+  }
+  if (file.key === HAKIMI_AUDIO.key || file.key.startsWith('hajimi-')) {
+    return '正在叫醒哈基米…';
+  }
   if (file.key.startsWith('neon-')) {
     return '正在接通未来城…';
   }
@@ -85,6 +86,7 @@ export class BootScene extends Phaser.Scene {
     loadPlayerSkin(this);
     loadBackgroundMusic(this);
     loadSnowPeak(this);
+    loadHajimiAssets(this);
     loadNeonWorldAssets(this);
   }
 

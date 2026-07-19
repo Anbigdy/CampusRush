@@ -20,6 +20,12 @@ import {
   stopHakimiVoice,
 } from '../src/game/snowPeakAudio.js';
 import { SNOW_PEAK_RANDOM_LINES } from '../src/game/snowPeakDialogue.js';
+import {
+  BLIND_BOX_OUTCOMES,
+  HAKIMI_OUTCOME_PROBABILITY,
+  selectBlindBoxOutcome,
+} from '../src/game/blindBox.js';
+import { HAJIMI_ASSETS } from '../src/game/hajimiAssets.js';
 
 const failures = [];
 const obstacles = [...OBSTACLES, ...ISEKAI_OBSTACLES, ...NEON_OBSTACLES];
@@ -288,6 +294,39 @@ if (!existsSync(hakimiAssetUrl) || statSync(hakimiAssetUrl).size < 1000) {
   failures.push('CC0 Hakimi audio asset is missing or unexpectedly empty');
 }
 
+const blindBoxProbabilityTotal = BLIND_BOX_OUTCOMES.reduce(
+  (total, outcome) => total + outcome.probability,
+  0,
+);
+if (Math.abs(blindBoxProbabilityTotal - 1) > Number.EPSILON) {
+  failures.push('blind-box outcome probabilities do not sum to one');
+}
+if (HAKIMI_OUTCOME_PROBABILITY < 0.5) {
+  failures.push('Hakimi is not the dominant blind-box outcome');
+}
+const blindBoxBoundaryChecks = [
+  [0, 'hakimi'],
+  [0.499999, 'hakimi'],
+  [0.5, 'score'],
+  [0.7, 'skill'],
+  [0.85, 'debt'],
+  [0.95, 'nothing'],
+];
+blindBoxBoundaryChecks.forEach(([roll, expected]) => {
+  if (selectBlindBoxOutcome(roll) !== expected) {
+    failures.push(`blind-box roll ${roll} did not select ${expected}`);
+  }
+});
+
+HAJIMI_ASSETS.forEach(({ assetPath }) => {
+  const assetUrl = new URL(`../public/${assetPath}`, import.meta.url);
+  if (!existsSync(assetUrl) || statSync(assetUrl).size < 1000) {
+    failures.push(
+      `Hakimi portrait is missing or unexpectedly empty: ${assetPath}`,
+    );
+  }
+});
+
 if (failures.length) {
   console.error(JSON.stringify({ failures }, null, 2));
   process.exitCode = 1;
@@ -301,6 +340,8 @@ if (failures.length) {
         hakimiVoiceChecks: 3,
         snowPeakDialogueChecks: 1,
         audioAssetsChecked: 1,
+        blindBoxChecks: 2 + blindBoxBoundaryChecks.length,
+        hajimiPortraitsChecked: HAJIMI_ASSETS.length,
         failures: 0,
       },
       null,

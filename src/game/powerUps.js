@@ -8,7 +8,10 @@ import {
   decoratePickup,
   updatePickupPresentation,
 } from './gameplayPresentation.js';
-import { playSound } from './soundEffects.js';
+import { selectBlindBoxOutcome } from './blindBox.js';
+import { HAJIMI_ASSETS } from './hajimiAssets.js';
+import { playHakimiMeow } from './snowPeakAudio.js';
+import { isSoundEnabled, playSound } from './soundEffects.js';
 
 export const POWER_UPS = Object.freeze({
   shield: Object.freeze({
@@ -43,23 +46,23 @@ export const POWER_UPS = Object.freeze({
     duration: 10,
     color: 0x9b6bd1,
   }),
-  slowdown: Object.freeze({
-    id: 'slowdown',
-    texture: 'pickup-slowdown',
-    label: '节奏稳定器',
-    shortLabel: '降速',
-    duration: 10,
-    color: 0x4bb6d6,
+  blindBox: Object.freeze({
+    id: 'blindBox',
+    texture: 'pickup-blind-box',
+    label: '校园盲盒',
+    shortLabel: '盲盒',
+    color: 0xf15f5f,
   }),
 });
 
-const POWER_UP_ORDER = Object.freeze([
+const ACTIVE_EFFECT_ORDER = Object.freeze([
   'shield',
   'rush',
   'magnet',
   'doubleScore',
-  'slowdown',
 ]);
+const PICKUP_ORDER = Object.freeze([...ACTIVE_EFFECT_ORDER, 'blindBox']);
+const TIMED_REWARD_IDS = Object.freeze(['rush', 'magnet', 'doubleScore']);
 
 const FONT_FAMILY = 'Arial, "Microsoft YaHei", sans-serif';
 const COIN_VALUE = 10;
@@ -80,6 +83,7 @@ export class PowerUpManager {
     this.reserveObstacleGap = reserveObstacleGap;
     this.activeEffects = new Map();
     this.rushGraceRemaining = 0;
+    this.invalidCoinRemaining = 0;
     this.skillSpawnRemaining = 7;
     this.coinSpawnRemaining = 2.4;
 
@@ -112,7 +116,7 @@ export class PowerUpManager {
   createHud() {
     this.hudEntries = new Map();
 
-    POWER_UP_ORDER.forEach((id) => {
+    ACTIVE_EFFECT_ORDER.forEach((id) => {
       const definition = POWER_UPS[id];
       const background = this.scene.add
         .rectangle(0, 0, 96, 28, COLORS.navyDark, 0.9)
@@ -278,7 +282,7 @@ export class PowerUpManager {
   }
 
   spawnSkill() {
-    const id = Phaser.Utils.Array.GetRandom(POWER_UP_ORDER);
+    const id = Phaser.Utils.Array.GetRandom(PICKUP_ORDER);
     const definition = POWER_UPS[id];
     const pickup = this.skillPickups.create(
       GAMEPLAY.width + 36,
@@ -388,11 +392,21 @@ export class PowerUpManager {
     const y = coin.y;
     coin.destroy();
     playSound(this.scene, 'coin');
+    if (this.invalidCoinRemaining > 0) {
+      this.invalidCoinRemaining -= 1;
+      this.showScorePopup(x, y, '校园卡欠费', '#ff7b72');
+      return;
+    }
     const points = COIN_VALUE * this.getScoreMultiplier();
     this.addScore(points, x, y, `+${points}`);
   }
 
   activate(id) {
+    if (id === 'blindBox') {
+      this.openBlindBox();
+      return;
+    }
+
     const definition = POWER_UPS[id];
     if (!definition) {
       return;
@@ -409,10 +423,7 @@ export class PowerUpManager {
 
   activateRewardBundle() {
     const bonusPool = Phaser.Utils.Array.Shuffle([
-      'rush',
-      'magnet',
-      'doubleScore',
-      'slowdown',
+      ...TIMED_REWARD_IDS,
     ]).slice(0, 2);
     const rewardIds = ['shield', ...bonusPool];
     rewardIds.forEach((id) => {
@@ -428,6 +439,101 @@ export class PowerUpManager {
     this.showToast(`大礼包：永久护盾 + ${rewardNames} · +${points}`);
     this.updateHud();
     this.updatePlayerEffects();
+  }
+
+  openBlindBox() {
+    const outcome = selectBlindBoxOutcome();
+
+    if (outcome === 'hakimi') {
+      this.showHajimiReveal();
+      this.showToast('盲盒：哈基米！');
+      return;
+    }
+
+    if (outcome === 'score') {
+      const points = 60 * this.getScoreMultiplier();
+      this.addScore(points, this.player.x, this.player.y - 86, `盲盒 +${points}`);
+      this.showToast(`盲盒：奖学金到账 +${points}`);
+      return;
+    }
+
+    if (outcome === 'skill') {
+      const rewardId = Phaser.Utils.Array.GetRandom(TIMED_REWARD_IDS);
+      const reward = POWER_UPS[rewardId];
+      this.activeEffects.set(rewardId, reward.duration);
+      if (rewardId === 'rush') {
+        this.rushGraceRemaining = 0;
+      }
+      this.showToast(`盲盒：获得${reward.label}`);
+      this.updateHud();
+      this.updatePlayerEffects();
+      return;
+    }
+
+    if (outcome === 'debt') {
+      this.invalidCoinRemaining += 5;
+      this.showToast('盲盒：校园卡欠费，接下来 5 枚金币无效');
+      return;
+    }
+
+    this.showToast('盲盒：谢谢参与');
+  }
+
+  showHajimiReveal() {
+    this.clearHajimiReveal();
+    const texture = Phaser.Utils.Array.GetRandom(HAJIMI_ASSETS).key;
+    const shadow = this.scene.add
+      .rectangle(6, 7, 154, 174, COLORS.navyDark, 0.34)
+      .setStrokeStyle(0);
+    const panel = this.scene.add
+      .rectangle(0, 0, 154, 174, COLORS.cream, 0.98)
+      .setStrokeStyle(4, 0xffd45f, 1);
+    const image = this.scene.add
+      .image(0, -10, texture)
+      .setDisplaySize(132, 132);
+    const label = this.scene.add
+      .text(0, 73, '哈基米！', {
+        fontFamily: FONT_FAMILY,
+        fontSize: '18px',
+        fontStyle: 'bold',
+        color: '#173c59',
+        stroke: '#fff7e3',
+        strokeThickness: 3,
+      })
+      .setOrigin(0.5);
+
+    this.hajimiReveal = this.scene.add
+      .container(GAMEPLAY.width / 2, 164, [
+        shadow,
+        panel,
+        image,
+        label,
+      ])
+      .setDepth(80)
+      .setScrollFactor(0)
+      .setScale(0.25)
+      .setAlpha(0);
+
+    playHakimiMeow(this.scene, isSoundEnabled());
+    this.scene.tweens.add({
+      targets: this.hajimiReveal,
+      scale: 1,
+      alpha: 1,
+      duration: 180,
+      ease: 'Back.Out',
+      hold: 820,
+      yoyo: true,
+      onComplete: () => this.clearHajimiReveal(),
+    });
+  }
+
+  clearHajimiReveal() {
+    if (!this.hajimiReveal) {
+      return;
+    }
+    this.scene.tweens.killTweensOf(this.hajimiReveal);
+    this.hajimiReveal.destroy(true);
+    this.hajimiReveal = null;
   }
 
   showToast(message) {
@@ -468,7 +574,7 @@ export class PowerUpManager {
   }
 
   updateHud() {
-    const visibleIds = POWER_UP_ORDER.filter((id) => this.isActive(id));
+    const visibleIds = ACTIVE_EFFECT_ORDER.filter((id) => this.isActive(id));
     this.hudEntries.forEach(({ container }) => container.setVisible(false));
 
     visibleIds.forEach((id, index) => {
@@ -541,18 +647,7 @@ export class PowerUpManager {
     if (this.isActive('rush')) {
       return Math.min(1.4, GAMEPLAY.rushMaxSpeed / worldSpeed);
     }
-
-    if (!this.isActive('slowdown')) {
-      return 1;
-    }
-
-    const remaining = this.activeEffects.get('slowdown') ?? 0;
-    const recoveryProgress = Phaser.Math.Clamp(
-      1 - remaining / POWER_UPS.slowdown.duration,
-      0,
-      1,
-    );
-    return Phaser.Math.Linear(0.62, 1, recoveryProgress);
+    return 1;
   }
 
   getScoreMultiplier() {
@@ -579,6 +674,7 @@ export class PowerUpManager {
     return {
       activeEffects: [...this.activeEffects.entries()],
       rushGraceRemaining: this.rushGraceRemaining,
+      invalidCoinRemaining: this.invalidCoinRemaining,
       skillSpawnRemaining: this.skillSpawnRemaining,
       coinSpawnRemaining: this.coinSpawnRemaining,
     };
@@ -589,12 +685,13 @@ export class PowerUpManager {
       return;
     }
     this.activeEffects = new Map(
-      (state.activeEffects ?? []).map(([id, remaining]) => [
-        id === 'coinBonus' ? 'slowdown' : id,
-        remaining,
-      ]),
+      (state.activeEffects ?? []).filter(
+        ([id, remaining]) =>
+          ACTIVE_EFFECT_ORDER.includes(id) && remaining > 0,
+      ),
     );
     this.rushGraceRemaining = Math.max(0, state.rushGraceRemaining ?? 0);
+    this.invalidCoinRemaining = Math.max(0, state.invalidCoinRemaining ?? 0);
     this.skillSpawnRemaining = Math.max(0.8, state.skillSpawnRemaining ?? 7);
     this.coinSpawnRemaining = Math.max(0.5, state.coinSpawnRemaining ?? 2.4);
     this.updateHud();
@@ -604,6 +701,8 @@ export class PowerUpManager {
   stop() {
     this.activeEffects.clear();
     this.rushGraceRemaining = 0;
+    this.invalidCoinRemaining = 0;
+    this.clearHajimiReveal();
     this.player.anims.timeScale = 1;
     this.updateHud();
     this.updatePlayerEffects();
@@ -620,5 +719,6 @@ export class PowerUpManager {
       group.clear(true, true);
     });
     this.toast.setAlpha(0);
+    this.clearHajimiReveal();
   }
 }

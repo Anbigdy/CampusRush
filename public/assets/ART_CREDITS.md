@@ -31,3 +31,12 @@ The Emilia and Snow Peak Codex Pet packs were supplied with the course project.
   pitch-shifted, and sequenced into original cat-language dialogue and singing.
 - SHA-256:
   `78eaf5b601a30543905418c53a61df5e53dd93c3dfee5f7c06ae1db11876e844`
+
+## Hajimi blind-box portraits
+
+- Source references: six cat meme images selected and cleared for use by the
+  project owner in `work/hajimi_save/`.
+- Adaptation: each reference was converted into a 256 x 256 pixel-art portrait
+  for the Campus Rush blind-box reveal using OpenAI ImageGen on 2026-07-19.
+- Used in: `hajimi/`.
+- No third-party text, logo, or watermark was added during adaptation.

@@ -248,20 +248,20 @@ export function createGameTextures(scene) {
     graphics.fillCircle(30, 22, 3);
   });
 
-  saveTexture(scene, 'pickup-slowdown', 46, 46, (graphics) => {
+  saveTexture(scene, 'pickup-blind-box', 46, 46, (graphics) => {
     graphics.fillStyle(0xffffff, 0.92);
     graphics.fillCircle(23, 23, 22);
-    graphics.fillStyle(0x4bb6d6, 1);
-    graphics.fillRoundedRect(5, 6, 36, 34, 9);
+    graphics.fillStyle(0xf15f5f, 1);
+    graphics.fillRoundedRect(6, 10, 34, 30, 7);
+    graphics.fillStyle(0xffd45f, 1);
+    graphics.fillRoundedRect(4, 7, 38, 10, 4);
+    graphics.fillRect(20, 7, 7, 33);
     graphics.fillStyle(COLORS.cream, 1);
-    graphics.fillCircle(23, 23, 12);
+    graphics.fillCircle(23, 25, 8);
+    graphics.fillStyle(COLORS.navy, 1);
+    graphics.fillCircle(23, 30, 1.7);
     graphics.lineStyle(3, COLORS.navy, 1);
-    graphics.lineBetween(23, 23, 23, 16);
-    graphics.lineBetween(23, 23, 17, 26);
-    graphics.lineStyle(3, 0x277f9d, 1);
-    graphics.arc(23, 23, 16, Math.PI * 0.18, Math.PI * 1.38, false);
-    graphics.fillStyle(0x277f9d, 1);
-    graphics.fillTriangle(8, 20, 14, 14, 15, 23);
+    graphics.arc(23, 23, 4.5, Math.PI * 1.05, Math.PI * 2.08, false);
   });
 
   saveTexture(scene, 'pickup-bundle', 58, 58, (graphics) => {
