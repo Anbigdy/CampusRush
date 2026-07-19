@@ -427,13 +427,13 @@ export class PlatformRouteManager {
       return;
     }
 
-    // The sprite origin is at its feet. Pin the rendered feet directly to the
-    // surface and pause gravity while supported so Arcade Physics cannot pull
-    // the body down and force a visible correction on every frame.
-    this.player.setY(surfaceY);
+    // Scene updates run before Arcade Physics copies Body movement back to the
+    // Game Object. Correct the Body only so the landing displacement is applied
+    // exactly once during postUpdate, including high-velocity fast falls.
+    this.player.body.position.y += surfaceY - currentFeetY;
+    this.player.body.updateCenter();
     this.player.setVelocityY(0);
     this.player.body.allowGravity = false;
-    this.player.body.updateFromGameObject();
     this.supported = true;
     this.supportY = surfaceY;
     this.supportContact = {

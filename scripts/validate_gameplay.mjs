@@ -11,6 +11,7 @@ import {
   chooseSurfaceCandidate,
   didLandOnSurface,
 } from '../src/game/platformSupport.js';
+import { anchorBodyGeometryToFoot } from '../src/game/playerBodyGeometry.js';
 import {
   singGenericChinese,
   speakGenericChinese,
@@ -24,6 +25,46 @@ import {
 
 const failures = [];
 const obstacles = [...OBSTACLES, ...ISEKAI_OBSTACLES, ...NEON_OBSTACLES];
+
+const bodyResizeProbe = {
+  position: {
+    x: 100,
+    y: 270,
+    set(x, y) {
+      this.x = x;
+      this.y = y;
+    },
+  },
+  width: 40,
+  height: 30,
+  prev: { x: 100, y: 270 },
+  prevFrame: { x: 100, y: 275 },
+  autoFrame: { x: 100, y: 270 },
+  updateCenter() {
+    this.center = {
+      x: this.position.x + this.width / 2,
+      y: this.position.y + this.height / 2,
+    };
+  },
+};
+const velocityBeforeResize =
+  bodyResizeProbe.position.y - bodyResizeProbe.prevFrame.y;
+anchorBodyGeometryToFoot(bodyResizeProbe, {
+  previousPositionX: 100,
+  previousPositionY: 270,
+  centerX: 120,
+  bottom: 324,
+});
+const velocityAfterResize =
+  bodyResizeProbe.position.y - bodyResizeProbe.prevFrame.y;
+if (
+  bodyResizeProbe.position.x !== 100 ||
+  bodyResizeProbe.position.y !== 294 ||
+  bodyResizeProbe.position.y + bodyResizeProbe.height !== 324 ||
+  velocityAfterResize !== velocityBeforeResize
+) {
+  failures.push('player body resize did not preserve foot position and motion');
+}
 
 for (const obstacle of obstacles) {
   const { body } = obstacle;
@@ -265,6 +306,7 @@ if (failures.length) {
       {
         obstaclesChecked: obstacles.length,
         supportChecks: 4 + landingCases.length,
+        bodyGeometryChecks: 1,
         speechFallbackChecks: 2,
         songSequenceChecks: 2,
         audioAssetsChecked: 1,

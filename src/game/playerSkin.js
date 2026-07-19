@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { anchorBodyGeometryToFoot } from './playerBodyGeometry.js';
 
 const FRAME_WIDTH = 192;
 const FRAME_HEIGHT = 208;
@@ -64,19 +65,33 @@ function setWorldBodySize(
   player,
   worldWidth,
   worldHeight,
-  { syncImmediately = false } = {},
 ) {
+  const body = player.body;
+  const previousPositionX = body.position.x;
+  const previousPositionY = body.position.y;
+  const anchoredCenterX = body.center.x;
+  const anchoredBottom = body.bottom;
   const sourceWidth = worldWidth / Math.abs(player.scaleX);
   const sourceHeight = worldHeight / Math.abs(player.scaleY);
 
-  player.body.setSize(sourceWidth, sourceHeight, false);
-  player.body.setOffset(
+  // Refresh the cached scale before setSize calculates the world dimensions.
+  body.updateBounds();
+  body.setSize(sourceWidth, sourceHeight, false);
+  body.setOffset(
     (PLAYER_SKIN.frameWidth - sourceWidth) / 2,
     PLAYER_SKIN.frameHeight - sourceHeight,
   );
-  if (syncImmediately) {
-    player.body.updateFromGameObject();
-  }
+
+  // Scene updates run after Arcade Physics integrates the Body but before its
+  // Game Object receives that movement. Anchor to the current Body, not the
+  // stale Game Object, and shift the history vectors by only the geometry
+  // change so postUpdate retains this frame's real velocity exactly once.
+  anchorBodyGeometryToFoot(body, {
+    previousPositionX,
+    previousPositionY,
+    centerX: anchoredCenterX,
+    bottom: anchoredBottom,
+  });
 }
 
 export function applyNormalPlayerShape(player) {
@@ -84,13 +99,10 @@ export function applyNormalPlayerShape(player) {
   setWorldBodySize(player, 34, 54);
 }
 
-export function applyCrouchingPlayerShape(
-  player,
-  { syncImmediately = false } = {},
-) {
+export function applyCrouchingPlayerShape(player) {
   player.setScale(
     PLAYER_SKIN.baseScale * PLAYER_SKIN.crouchScaleX,
     PLAYER_SKIN.baseScale * PLAYER_SKIN.crouchScaleY,
   );
-  setWorldBodySize(player, 40, 30, { syncImmediately });
+  setWorldBodySize(player, 40, 30);
 }
