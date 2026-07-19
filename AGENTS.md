@@ -37,6 +37,10 @@ Vite build.
 - Slope support must not toggle gravity on and off during continuous contact.
   Release support only for an explicit jump, a missing surface beyond tolerance,
   or a destroyed route.
+- Grounded crouch shape changes must not force an immediate Arcade Body
+  resynchronization. Reserve immediate body-position sync for airborne
+  transitions such as fast fall, or the ground contact flags can be lost for a
+  frame and incorrectly re-enter fast fall.
 - Rendering must account for high-DPI displays without changing the logical
   `960x540` gameplay coordinate system.
 

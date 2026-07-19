@@ -479,7 +479,7 @@ export class GameScene extends Phaser.Scene {
     this.jumpCount = GAMEPLAY.maxJumps;
     this.player.anims.pause();
     this.player.setAngle(0);
-    applyCrouchingPlayerShape(this.player);
+    applyCrouchingPlayerShape(this.player, { syncImmediately: true });
     this.player.setVelocityY(
       Math.max(this.player.body.velocity.y, GAMEPLAY.fastFallVelocity),
     );

@@ -60,7 +60,12 @@ export function preparePlayerSkin(scene) {
   }
 }
 
-function setWorldBodySize(player, worldWidth, worldHeight) {
+function setWorldBodySize(
+  player,
+  worldWidth,
+  worldHeight,
+  { syncImmediately = false } = {},
+) {
   const sourceWidth = worldWidth / Math.abs(player.scaleX);
   const sourceHeight = worldHeight / Math.abs(player.scaleY);
 
@@ -69,7 +74,9 @@ function setWorldBodySize(player, worldWidth, worldHeight) {
     (PLAYER_SKIN.frameWidth - sourceWidth) / 2,
     PLAYER_SKIN.frameHeight - sourceHeight,
   );
-  player.body.updateFromGameObject();
+  if (syncImmediately) {
+    player.body.updateFromGameObject();
+  }
 }
 
 export function applyNormalPlayerShape(player) {
@@ -77,10 +84,13 @@ export function applyNormalPlayerShape(player) {
   setWorldBodySize(player, 34, 54);
 }
 
-export function applyCrouchingPlayerShape(player) {
+export function applyCrouchingPlayerShape(
+  player,
+  { syncImmediately = false } = {},
+) {
   player.setScale(
     PLAYER_SKIN.baseScale * PLAYER_SKIN.crouchScaleX,
     PLAYER_SKIN.baseScale * PLAYER_SKIN.crouchScaleY,
   );
-  setWorldBodySize(player, 40, 30);
+  setWorldBodySize(player, 40, 30, { syncImmediately });
 }
