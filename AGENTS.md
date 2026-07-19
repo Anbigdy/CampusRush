@@ -44,6 +44,9 @@ Vite build.
 - Slope support corrections must move the Arcade Body only. Let the physics
   post-update synchronize the Game Object once, or fast landings will apply the
   same vertical correction twice and visibly oscillate.
+- Manual pause and resume countdown must use explicit, separate run states.
+  Physics, gameplay timers, tweens, animations, audio, spawning, and scoring
+  stay frozen until the full countdown completes.
 - Rendering must account for high-DPI displays without changing the logical
   `960x540` gameplay coordinate system.
 

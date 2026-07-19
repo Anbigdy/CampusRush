@@ -35,9 +35,25 @@ import {
   PICKUP_SPAWN_FREQUENCY_MULTIPLIER,
   PICKUP_SPAWN_TIMING,
 } from '../src/game/pickupSpawn.js';
+import {
+  RESUME_COUNTDOWN_SECONDS,
+  getResumeCountdownCue,
+  getResumeCountdownDuration,
+} from '../src/game/pauseState.js';
 
 const failures = [];
 const obstacles = [...OBSTACLES, ...ISEKAI_OBSTACLES, ...NEON_OBSTACLES];
+
+if (
+  RESUME_COUNTDOWN_SECONDS !== 3 ||
+  getResumeCountdownDuration() !== 3.35 ||
+  getResumeCountdownCue(3.35) !== '3' ||
+  getResumeCountdownCue(2.34) !== '2' ||
+  getResumeCountdownCue(1.34) !== '1' ||
+  getResumeCountdownCue(0.35) !== 'GO'
+) {
+  failures.push('manual pause countdown does not follow 3-2-1-GO');
+}
 
 if (
   SNOW_PEAK_RANDOM_LINES.length < 8 ||
@@ -445,6 +461,7 @@ if (failures.length) {
         audioAssetsChecked: 1,
         blindBoxChecks: 8 + blindBoxBoundaryChecks.length,
         pickupSpawnChecks: 2,
+        pauseStateChecks: 1,
         hajimiPortraitsChecked: HAJIMI_ASSETS.length,
         failures: 0,
       },

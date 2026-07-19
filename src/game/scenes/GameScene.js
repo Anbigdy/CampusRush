@@ -31,6 +31,10 @@ import {
   updateObstaclePresentation,
 } from '../gameplayPresentation.js';
 import { SnowPeakEvent } from '../snowPeakEvent.js';
+import {
+  getResumeCountdownCue,
+  getResumeCountdownDuration,
+} from '../pauseState.js';
 import { readHighScore, writeHighScore } from '../storage.js';
 import {
   isSoundEnabled,
@@ -103,6 +107,7 @@ export class GameScene extends Phaser.Scene {
     this.createPlayer();
     this.createObstacles();
     this.createHud();
+    this.createPauseOverlay();
     this.createPowerUps();
     this.createPlatformRoutes();
     this.createSnowPeakEvent();
@@ -222,6 +227,127 @@ export class GameScene extends Phaser.Scene {
     this.powerUps.showToast('念张师：额外生命 +1');
   }
 
+  createPauseOverlay() {
+    const veil = this.add
+      .rectangle(
+        GAMEPLAY.width / 2,
+        GAMEPLAY.height / 2,
+        GAMEPLAY.width,
+        GAMEPLAY.height,
+        0x071323,
+        0.72,
+      );
+    const accent = this.add
+      .rectangle(GAMEPLAY.width / 2, 204, 150, 6, COLORS.coral, 1);
+    this.pauseTitle = this.add
+      .text(GAMEPLAY.width / 2, 166, '已暂停', {
+        fontFamily: FONT_FAMILY,
+        fontSize: '30px',
+        fontStyle: 'bold',
+        color: '#fff7e3',
+      })
+      .setOrigin(0.5);
+    this.pauseCountdownText = this.add
+      .text(GAMEPLAY.width / 2, 276, '', {
+        fontFamily: FONT_FAMILY,
+        fontSize: '92px',
+        fontStyle: 'bold',
+        color: '#ffd166',
+        stroke: '#173c59',
+        strokeThickness: 9,
+      })
+      .setOrigin(0.5);
+    this.pauseHint = this.add
+      .text(GAMEPLAY.width / 2, 360, 'ESC 继续', {
+        fontFamily: FONT_FAMILY,
+        fontSize: '17px',
+        fontStyle: 'bold',
+        color: '#d8eef2',
+      })
+      .setOrigin(0.5);
+    this.pauseOverlay = this.add
+      .container(0, 0, [
+        veil,
+        accent,
+        this.pauseTitle,
+        this.pauseCountdownText,
+        this.pauseHint,
+      ])
+      .setDepth(220)
+      .setVisible(false);
+  }
+
+  startManualPause() {
+    if (this.runState !== 'playing') {
+      return false;
+    }
+    this.stopCrouch();
+    this.stopFastFall();
+    this.mobileCrouchHeld = false;
+    this.runState = 'manualPaused';
+    this.resumeCountdownRemaining = 0;
+    this.setMobileControlsVisible(false);
+    this.physics.pause();
+    this.player.anims.pause();
+    this.tweens.pauseAll();
+    this.time.paused = true;
+    stopHakimiVoice(this);
+    this.sound.pauseAll();
+    this.pauseTitle.setText('已暂停');
+    this.pauseCountdownText.setText('');
+    this.pauseHint.setText('ESC 继续');
+    this.pauseOverlay.setVisible(true);
+    return true;
+  }
+
+  beginResumeCountdown() {
+    if (this.runState !== 'manualPaused') {
+      return false;
+    }
+    this.runState = 'resumeCountdown';
+    this.resumeCountdownRemaining = getResumeCountdownDuration();
+    this.pauseTitle.setText('准备继续');
+    this.pauseCountdownText.setText(
+      getResumeCountdownCue(this.resumeCountdownRemaining),
+    );
+    this.pauseHint.setText('保持节奏');
+    return true;
+  }
+
+  cancelResumeCountdown() {
+    if (this.runState !== 'resumeCountdown') {
+      return false;
+    }
+    this.runState = 'manualPaused';
+    this.resumeCountdownRemaining = 0;
+    this.pauseTitle.setText('已暂停');
+    this.pauseCountdownText.setText('');
+    this.pauseHint.setText('ESC 继续');
+    return true;
+  }
+
+  updateResumeCountdown(deltaSeconds) {
+    this.resumeCountdownRemaining = Math.max(
+      0,
+      this.resumeCountdownRemaining - deltaSeconds,
+    );
+    this.pauseCountdownText.setText(
+      getResumeCountdownCue(this.resumeCountdownRemaining),
+    );
+    if (this.resumeCountdownRemaining > 0) {
+      return;
+    }
+
+    this.time.paused = false;
+    this.tweens.resumeAll();
+    this.physics.resume();
+    this.sound.resumeAll();
+    this.runState = 'playing';
+    this.player.anims.resume();
+    this.pauseOverlay.setVisible(false);
+    this.setMobileControlsVisible(true);
+  }
+
   useExtraLife(obstacle) {
     this.extraLives -= 1;
     this.extraLifeGraceRemaining = 1.8;
@@ -327,12 +453,17 @@ export class GameScene extends Phaser.Scene {
       .setStrokeStyle(2, COLORS.white, 0.8)
       .setDepth(20);
     this.add
-      .text(919, 40, 'SPACE / ↑ / 点击：二段跳  ·  ↓ / S：下蹲 / 下坠  ·  M：声音', {
-        fontFamily: FONT_FAMILY,
-        fontSize: '11px',
-        fontStyle: 'bold',
-        color: '#fff7e3',
-      })
+      .text(
+        919,
+        40,
+        'SPACE / ↑ / 点击：二段跳  ·  ↓ / S：下蹲 / 下坠  ·  M：声音  ·  ESC：暂停',
+        {
+          fontFamily: FONT_FAMILY,
+          fontSize: '11px',
+          fontStyle: 'bold',
+          color: '#fff7e3',
+        },
+      )
       .setOrigin(1, 0.5)
       .setDepth(21);
 
@@ -377,6 +508,9 @@ export class GameScene extends Phaser.Scene {
     this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
     this.sKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S);
     this.mKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.M);
+    this.escapeKey = this.input.keyboard.addKey(
+      Phaser.Input.Keyboard.KeyCodes.ESC,
+    );
     this.pointerJumpHandler = () => this.tryJump();
     this.input.on('pointerdown', this.pointerJumpHandler);
     this.mobileInputHandler = (event) => {
@@ -1470,7 +1604,7 @@ export class GameScene extends Phaser.Scene {
       GAMEPLAY.maxJumps - this.jumpCount,
     );
     this.soundStatusText?.setText(
-      `剩余跳跃 ${jumpsRemaining}/${GAMEPLAY.maxJumps} · M 声音 ${isSoundEnabled() ? '开' : '关'}`,
+      `剩余跳跃 ${jumpsRemaining}/${GAMEPLAY.maxJumps} · M 声音 ${isSoundEnabled() ? '开' : '关'} · ESC 暂停`,
     );
   }
 
@@ -1496,6 +1630,24 @@ export class GameScene extends Phaser.Scene {
 
   update(_time, delta) {
     const safeDeltaSeconds = Math.min(delta, 50) / 1000;
+    if (Phaser.Input.Keyboard.JustDown(this.escapeKey)) {
+      if (this.runState === 'playing') {
+        this.startManualPause();
+      } else if (this.runState === 'manualPaused') {
+        this.beginResumeCountdown();
+      } else if (this.runState === 'resumeCountdown') {
+        this.cancelResumeCountdown();
+      }
+    }
+
+    if (this.runState === 'manualPaused') {
+      return;
+    }
+    if (this.runState === 'resumeCountdown') {
+      this.updateResumeCountdown(safeDeltaSeconds);
+      return;
+    }
+
     if (Phaser.Input.Keyboard.JustDown(this.mKey)) {
       const enabled = toggleSound(this);
       if (!enabled) {
@@ -1662,6 +1814,14 @@ export class GameScene extends Phaser.Scene {
   }
 
   shutdown() {
+    if (
+      this.runState === 'manualPaused' ||
+      this.runState === 'resumeCountdown'
+    ) {
+      this.time.paused = false;
+      this.tweens.resumeAll();
+      this.sound.resumeAll();
+    }
     this.setMobileControlsVisible(false);
     this.snowPeakEvent?.destroy();
     this.snowPeakEvent = null;
