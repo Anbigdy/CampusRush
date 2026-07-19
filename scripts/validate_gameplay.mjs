@@ -16,6 +16,8 @@ import {
   HAKIMI_AUDIO,
   SNOW_PEAK_SUNG_LINE,
   buildHakimiVoiceSequence,
+  chooseSnowPeakVoice,
+  getSnowPeakSpeechSettings,
   playHakimiVoice,
   stopHakimiVoice,
 } from '../src/game/snowPeakAudio.js';
@@ -240,7 +242,42 @@ if (
   failures.push('Hakimi song did not create the intended pitched sequence');
 }
 
+const preferredVoice = chooseSnowPeakVoice([
+  { name: 'Tingting', lang: 'zh-CN', localService: true },
+  { name: 'Microsoft Yunxi', lang: 'zh-CN', localService: false },
+  { name: 'Samantha', lang: 'en-US', localService: true },
+]);
+const speechSettings = getSnowPeakSpeechSettings();
+if (
+  preferredVoice?.name !== 'Microsoft Yunxi' ||
+  speechSettings.lang !== 'zh-CN' ||
+  speechSettings.pitch >= 1
+) {
+  failures.push(
+    'Snow Peak speech did not prefer intelligible Chinese male voice',
+  );
+}
+
 const scheduledHakimiSources = [];
+const spokenUtterances = [];
+let synthesisCancelCount = 0;
+class MockSpeechSynthesisUtterance {
+  constructor(text) {
+    this.text = text;
+  }
+}
+const mockSpeechRuntime = {
+  SpeechSynthesisUtterance: MockSpeechSynthesisUtterance,
+  speechSynthesis: {
+    getVoices: () => [
+      { name: 'Microsoft Yunxi', lang: 'zh-CN', localService: true },
+    ],
+    speak: (utterance) => spokenUtterances.push(utterance),
+    cancel: () => {
+      synthesisCancelCount += 1;
+    },
+  },
+};
 const mockHakimiScene = {
   cache: {
     audio: {
@@ -278,12 +315,20 @@ const mockHakimiScene = {
   },
 };
 if (
-  !playHakimiVoice(mockHakimiScene, '新闻学已死') ||
-  scheduledHakimiSources.length !== 5 ||
+  !playHakimiVoice(mockHakimiScene, '新闻学已死', {
+    speechRuntime: mockSpeechRuntime,
+  }) ||
+  spokenUtterances.length !== 1 ||
+  spokenUtterances[0].text !== '新闻学已死' ||
+  spokenUtterances[0].lang !== 'zh-CN' ||
+  scheduledHakimiSources.length !== 2 ||
   !stopHakimiVoice(mockHakimiScene) ||
+  synthesisCancelCount !== 1 ||
   scheduledHakimiSources.some((source) => !source.stopped)
 ) {
-  failures.push('Hakimi voice did not schedule and stop cleanly');
+  failures.push(
+    'Snow Peak speech and Hakimi accents did not schedule and stop',
+  );
 }
 
 const hakimiAssetUrl = new URL(
@@ -337,7 +382,7 @@ if (failures.length) {
         obstaclesChecked: obstacles.length,
         supportChecks: 4 + landingCases.length,
         bodyGeometryChecks: 1,
-        hakimiVoiceChecks: 3,
+        hakimiVoiceChecks: 4,
         snowPeakDialogueChecks: 1,
         audioAssetsChecked: 1,
         blindBoxChecks: 2 + blindBoxBoundaryChecks.length,
