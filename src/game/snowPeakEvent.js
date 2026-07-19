@@ -8,6 +8,7 @@ import {
   playHakimiVoice,
   stopHakimiVoice,
 } from './snowPeakAudio.js';
+import { SNOW_PEAK_RANDOM_LINES } from './snowPeakDialogue.js';
 
 const FONT_FAMILY = 'Arial, "Microsoft YaHei", sans-serif';
 const FRAME_WIDTH = 192;
@@ -18,13 +19,6 @@ const EVENT_DURATION_SECONDS = 30;
 const FATIGUE_WARNING_SECONDS = 2.4;
 const SLOWDOWN_SECONDS = 3.2;
 const SLOWDOWN_X = GAMEPLAY.playerX + 90;
-const RANDOM_LINES = Object.freeze([
-  '三口一个巧乐兹',
-  '土木有前景',
-  '新闻学已死',
-  '我没意见',
-]);
-
 export const SNOW_PEAK = Object.freeze({
   triggerScore: 2000,
   textureKey: 'snow-peak-runner',
@@ -303,7 +297,9 @@ export class SnowPeakEvent {
   }
 
   showRandomLine() {
-    const choices = RANDOM_LINES.filter((line) => line !== this.lastRandomLine);
+    const choices = SNOW_PEAK_RANDOM_LINES.filter(
+      (line) => line !== this.lastRandomLine,
+    );
     const line = Phaser.Utils.Array.GetRandom(choices);
     this.lastRandomLine = line;
     this.showSpeech(line, 2100, 0x8fffe0);

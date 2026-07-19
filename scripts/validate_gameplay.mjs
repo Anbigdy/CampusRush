@@ -19,9 +19,20 @@ import {
   playHakimiVoice,
   stopHakimiVoice,
 } from '../src/game/snowPeakAudio.js';
+import { SNOW_PEAK_RANDOM_LINES } from '../src/game/snowPeakDialogue.js';
 
 const failures = [];
 const obstacles = [...OBSTACLES, ...ISEKAI_OBSTACLES, ...NEON_OBSTACLES];
+
+if (
+  SNOW_PEAK_RANDOM_LINES.length < 8 ||
+  new Set(SNOW_PEAK_RANDOM_LINES).size !== SNOW_PEAK_RANDOM_LINES.length ||
+  SNOW_PEAK_RANDOM_LINES.some((line) => line.length > 16)
+) {
+  failures.push(
+    'Snow Peak dialogue candidates are sparse, duplicated, or too long',
+  );
+}
 
 const bodyResizeProbe = {
   position: {
@@ -288,6 +299,7 @@ if (failures.length) {
         supportChecks: 4 + landingCases.length,
         bodyGeometryChecks: 1,
         hakimiVoiceChecks: 3,
+        snowPeakDialogueChecks: 1,
         audioAssetsChecked: 1,
         failures: 0,
       },
