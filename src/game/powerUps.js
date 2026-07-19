@@ -8,9 +8,15 @@ import {
   decoratePickup,
   updatePickupPresentation,
 } from './gameplayPresentation.js';
-import { selectBlindBoxOutcome } from './blindBox.js';
+import {
+  HAJIMI_REVEAL_ANIMATION,
+  selectBlindBoxOutcome,
+} from './blindBox.js';
 import { HAJIMI_ASSETS } from './hajimiAssets.js';
-import { PICKUP_SPAWN_TIMING } from './pickupSpawn.js';
+import {
+  BLIND_BOX_SPAWN_TIMING,
+  PICKUP_SPAWN_TIMING,
+} from './pickupSpawn.js';
 import { playHakimiMeow } from './snowPeakAudio.js';
 import { isSoundEnabled, playSound } from './soundEffects.js';
 
@@ -62,7 +68,7 @@ const ACTIVE_EFFECT_ORDER = Object.freeze([
   'magnet',
   'doubleScore',
 ]);
-const PICKUP_ORDER = Object.freeze([...ACTIVE_EFFECT_ORDER, 'blindBox']);
+const REGULAR_PICKUP_ORDER = ACTIVE_EFFECT_ORDER;
 const TIMED_REWARD_IDS = Object.freeze(['rush', 'magnet', 'doubleScore']);
 
 const FONT_FAMILY = 'Arial, "Microsoft YaHei", sans-serif';
@@ -86,6 +92,7 @@ export class PowerUpManager {
     this.rushGraceRemaining = 0;
     this.invalidCoinRemaining = 0;
     this.skillSpawnRemaining = PICKUP_SPAWN_TIMING.initial;
+    this.blindBoxSpawnRemaining = BLIND_BOX_SPAWN_TIMING.initial;
     this.coinSpawnRemaining = 2.4;
 
     this.skillPickups = scene.physics.add.group({
@@ -210,7 +217,20 @@ export class PowerUpManager {
 
   updatePickups(deltaSeconds, worldSpeed) {
     this.skillSpawnRemaining -= deltaSeconds;
+    this.blindBoxSpawnRemaining -= deltaSeconds;
     this.coinSpawnRemaining -= deltaSeconds;
+
+    if (this.blindBoxSpawnRemaining <= 0) {
+      if (this.isSpawnSafe() && this.isPickupEntryClear()) {
+        this.spawnSkill('blindBox');
+        this.blindBoxSpawnRemaining = Phaser.Math.FloatBetween(
+          BLIND_BOX_SPAWN_TIMING.min,
+          BLIND_BOX_SPAWN_TIMING.max,
+        );
+      } else {
+        this.blindBoxSpawnRemaining = 0.7;
+      }
+    }
 
     if (this.skillSpawnRemaining <= 0) {
       if (this.isSpawnSafe() && this.isPickupEntryClear()) {
@@ -285,8 +305,9 @@ export class PowerUpManager {
     return isClear;
   }
 
-  spawnSkill() {
-    const id = Phaser.Utils.Array.GetRandom(PICKUP_ORDER);
+  spawnSkill(forcedId = null) {
+    const id =
+      forcedId ?? Phaser.Utils.Array.GetRandom(REGULAR_PICKUP_ORDER);
     const definition = POWER_UPS[id];
     const pickup = this.skillPickups.create(
       GAMEPLAY.width + 36,
@@ -496,7 +517,8 @@ export class PowerUpManager {
       .setStrokeStyle(7, 0xffd45f, 1);
     const image = this.scene.add
       .image(0, 0, texture)
-      .setDisplaySize(300, 300);
+      .setDisplaySize(300, 300)
+      .setAngle(HAJIMI_REVEAL_ANIMATION.imageStartAngle);
     const label = this.scene.add
       .text(0, 188, '哈基米！', {
         fontFamily: FONT_FAMILY,
@@ -516,31 +538,45 @@ export class PowerUpManager {
         label,
       ])
       .setDepth(120)
-      .setScale(0.18)
-      .setAngle(-7)
+      .setScale(0.08)
+      .setAngle(-18)
       .setAlpha(0);
+    this.hajimiRevealImage = image;
 
     playHakimiMeow(this.scene, isSoundEnabled());
+    this.scene.tweens.add({
+      targets: image,
+      angle: HAJIMI_REVEAL_ANIMATION.imageEnterAngle,
+      duration: HAJIMI_REVEAL_ANIMATION.enterDuration,
+      ease: 'Back.Out',
+    });
     this.scene.tweens.add({
       targets: this.hajimiReveal,
       scaleX: 1,
       scaleY: 1,
-      angle: 4,
+      angle: 8,
       alpha: 1,
-      duration: 360,
-      ease: 'Back.Out',
+      duration: HAJIMI_REVEAL_ANIMATION.enterDuration,
+      ease: 'Elastic.Out',
       onComplete: () => {
         if (!this.hajimiReveal) {
           return;
         }
         this.scene.tweens.add({
+          targets: image,
+          angle: HAJIMI_REVEAL_ANIMATION.imageExitAngle,
+          delay: 620,
+          duration: HAJIMI_REVEAL_ANIMATION.exitDuration,
+          ease: 'Cubic.In',
+        });
+        this.scene.tweens.add({
           targets: this.hajimiReveal,
           scaleX: 1.18,
           scaleY: 1.18,
-          angle: -3,
+          angle: -10,
           alpha: 0,
-          delay: 720,
-          duration: 460,
+          delay: 620,
+          duration: HAJIMI_REVEAL_ANIMATION.exitDuration,
           ease: 'Sine.In',
           onComplete: () => this.clearHajimiReveal(),
         });
@@ -552,9 +588,13 @@ export class PowerUpManager {
     if (!this.hajimiReveal) {
       return;
     }
+    if (this.hajimiRevealImage) {
+      this.scene.tweens.killTweensOf(this.hajimiRevealImage);
+    }
     this.scene.tweens.killTweensOf(this.hajimiReveal);
     this.hajimiReveal.destroy(true);
     this.hajimiReveal = null;
+    this.hajimiRevealImage = null;
   }
 
   showToast(message) {
@@ -697,6 +737,7 @@ export class PowerUpManager {
       rushGraceRemaining: this.rushGraceRemaining,
       invalidCoinRemaining: this.invalidCoinRemaining,
       skillSpawnRemaining: this.skillSpawnRemaining,
+      blindBoxSpawnRemaining: this.blindBoxSpawnRemaining,
       coinSpawnRemaining: this.coinSpawnRemaining,
     };
   }
@@ -716,6 +757,10 @@ export class PowerUpManager {
     this.skillSpawnRemaining = Math.max(
       0.8,
       state.skillSpawnRemaining ?? PICKUP_SPAWN_TIMING.initial,
+    );
+    this.blindBoxSpawnRemaining = Math.max(
+      0.7,
+      state.blindBoxSpawnRemaining ?? BLIND_BOX_SPAWN_TIMING.initial,
     );
     this.coinSpawnRemaining = Math.max(0.5, state.coinSpawnRemaining ?? 2.4);
     this.updateHud();

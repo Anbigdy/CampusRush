@@ -9,6 +9,14 @@ export const BLIND_BOX_OUTCOMES = Object.freeze([
 export const HAKIMI_OUTCOME_PROBABILITY =
   BLIND_BOX_OUTCOMES.find((outcome) => outcome.id === 'hakimi')?.probability ?? 0;
 
+export const HAJIMI_REVEAL_ANIMATION = Object.freeze({
+  imageStartAngle: -540,
+  imageEnterAngle: 720,
+  imageExitAngle: 1440,
+  enterDuration: 520,
+  exitDuration: 460,
+});
+
 export function selectBlindBoxOutcome(randomValue = Math.random()) {
   const roll = Math.min(1 - Number.EPSILON, Math.max(0, randomValue));
   let cumulativeProbability = 0;

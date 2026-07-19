@@ -12,3 +12,9 @@ export const PICKUP_SPAWN_TIMING = Object.freeze({
   min: BASE_PICKUP_SPAWN_TIMING.min / PICKUP_SPAWN_FREQUENCY_MULTIPLIER,
   max: BASE_PICKUP_SPAWN_TIMING.max / PICKUP_SPAWN_FREQUENCY_MULTIPLIER,
 });
+
+export const BLIND_BOX_SPAWN_TIMING = Object.freeze({
+  initial: 4,
+  min: 7,
+  max: 10,
+});

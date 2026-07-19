@@ -24,11 +24,13 @@ import {
 import { SNOW_PEAK_RANDOM_LINES } from '../src/game/snowPeakDialogue.js';
 import {
   BLIND_BOX_OUTCOMES,
+  HAJIMI_REVEAL_ANIMATION,
   HAKIMI_OUTCOME_PROBABILITY,
   selectBlindBoxOutcome,
 } from '../src/game/blindBox.js';
 import { HAJIMI_ASSETS } from '../src/game/hajimiAssets.js';
 import {
+  BLIND_BOX_SPAWN_TIMING,
   PICKUP_SPAWN_FREQUENCY_MULTIPLIER,
   PICKUP_SPAWN_TIMING,
 } from '../src/game/pickupSpawn.js';
@@ -365,6 +367,22 @@ if (
 ) {
   failures.push('pickup spawn frequency is not increased by exactly 20%');
 }
+if (
+  BLIND_BOX_SPAWN_TIMING.initial >= PICKUP_SPAWN_TIMING.initial ||
+  BLIND_BOX_SPAWN_TIMING.min >= PICKUP_SPAWN_TIMING.min ||
+  BLIND_BOX_SPAWN_TIMING.max > PICKUP_SPAWN_TIMING.min
+) {
+  failures.push('blind-box timer is not independently more frequent');
+}
+const revealEntryRotation =
+  HAJIMI_REVEAL_ANIMATION.imageEnterAngle -
+  HAJIMI_REVEAL_ANIMATION.imageStartAngle;
+const revealExitRotation =
+  HAJIMI_REVEAL_ANIMATION.imageExitAngle -
+  HAJIMI_REVEAL_ANIMATION.imageEnterAngle;
+if (revealEntryRotation < 1080 || revealExitRotation < 720) {
+  failures.push('Hakimi reveal rotation is not exaggerated enough');
+}
 const blindBoxBoundaryChecks = [
   [0, 'hakimi'],
   [2 / 3 - 0.000001, 'hakimi'],
@@ -401,8 +419,8 @@ if (failures.length) {
         hakimiVoiceChecks: 4,
         snowPeakDialogueChecks: 1,
         audioAssetsChecked: 1,
-        blindBoxChecks: 3 + blindBoxBoundaryChecks.length,
-        pickupSpawnChecks: 1,
+        blindBoxChecks: 4 + blindBoxBoundaryChecks.length,
+        pickupSpawnChecks: 2,
         hajimiPortraitsChecked: HAJIMI_ASSETS.length,
         failures: 0,
       },
