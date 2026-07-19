@@ -34,9 +34,12 @@ The Emilia and Snow Peak Codex Pet packs were supplied with the course project.
 
 ## Hajimi blind-box portraits
 
-- Source references: six cat meme images selected and cleared for use by the
-  project owner in `work/hajimi_save/`.
-- Adaptation: each reference was converted into a 256 x 256 pixel-art portrait
-  for the Campus Rush blind-box reveal using OpenAI ImageGen on 2026-07-19.
+- Source references: eighteen cat meme images selected and cleared for use by
+  the project owner in `work/hajimi_save/` and `work/hajimi_ne/`.
+- Adaptation: the original six references were converted into 256 x 256
+  pixel-art portraits using OpenAI ImageGen on 2026-07-19. The twelve additions
+  were center-cropped, reduced to 64 x 64 and 64 colors, then enlarged to
+  256 x 256 with nearest-neighbor sampling by
+  `scripts/pixelate_hajimi_assets.py`; no image-generation model was used.
 - Used in: `hajimi/`.
 - No third-party text, logo, or watermark was added during adaptation.
