@@ -28,6 +28,10 @@ import {
   selectBlindBoxOutcome,
 } from '../src/game/blindBox.js';
 import { HAJIMI_ASSETS } from '../src/game/hajimiAssets.js';
+import {
+  PICKUP_SPAWN_FREQUENCY_MULTIPLIER,
+  PICKUP_SPAWN_TIMING,
+} from '../src/game/pickupSpawn.js';
 
 const failures = [];
 const obstacles = [...OBSTACLES, ...ISEKAI_OBSTACLES, ...NEON_OBSTACLES];
@@ -346,16 +350,28 @@ const blindBoxProbabilityTotal = BLIND_BOX_OUTCOMES.reduce(
 if (Math.abs(blindBoxProbabilityTotal - 1) > Number.EPSILON) {
   failures.push('blind-box outcome probabilities do not sum to one');
 }
-if (HAKIMI_OUTCOME_PROBABILITY < 0.5) {
-  failures.push('Hakimi is not the dominant blind-box outcome');
+if (
+  Math.abs(
+    HAKIMI_OUTCOME_PROBABILITY -
+      2 * (1 - HAKIMI_OUTCOME_PROBABILITY),
+  ) > 1e-12
+) {
+  failures.push('Hakimi does not have twice the combined non-Hakimi weight');
+}
+if (
+  PICKUP_SPAWN_FREQUENCY_MULTIPLIER !== 1.2 ||
+  PICKUP_SPAWN_TIMING.min !== 10 ||
+  PICKUP_SPAWN_TIMING.max !== 15
+) {
+  failures.push('pickup spawn frequency is not increased by exactly 20%');
 }
 const blindBoxBoundaryChecks = [
   [0, 'hakimi'],
-  [0.499999, 'hakimi'],
-  [0.5, 'score'],
-  [0.7, 'skill'],
-  [0.85, 'debt'],
-  [0.95, 'nothing'],
+  [2 / 3 - 0.000001, 'hakimi'],
+  [2 / 3, 'score'],
+  [0.8, 'skill'],
+  [0.9, 'debt'],
+  [29 / 30, 'nothing'],
 ];
 blindBoxBoundaryChecks.forEach(([roll, expected]) => {
   if (selectBlindBoxOutcome(roll) !== expected) {
@@ -385,7 +401,8 @@ if (failures.length) {
         hakimiVoiceChecks: 4,
         snowPeakDialogueChecks: 1,
         audioAssetsChecked: 1,
-        blindBoxChecks: 2 + blindBoxBoundaryChecks.length,
+        blindBoxChecks: 3 + blindBoxBoundaryChecks.length,
+        pickupSpawnChecks: 1,
         hajimiPortraitsChecked: HAJIMI_ASSETS.length,
         failures: 0,
       },

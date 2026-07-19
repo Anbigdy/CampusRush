@@ -10,6 +10,7 @@ import {
 } from './gameplayPresentation.js';
 import { selectBlindBoxOutcome } from './blindBox.js';
 import { HAJIMI_ASSETS } from './hajimiAssets.js';
+import { PICKUP_SPAWN_TIMING } from './pickupSpawn.js';
 import { playHakimiMeow } from './snowPeakAudio.js';
 import { isSoundEnabled, playSound } from './soundEffects.js';
 
@@ -84,7 +85,7 @@ export class PowerUpManager {
     this.activeEffects = new Map();
     this.rushGraceRemaining = 0;
     this.invalidCoinRemaining = 0;
-    this.skillSpawnRemaining = 7;
+    this.skillSpawnRemaining = PICKUP_SPAWN_TIMING.initial;
     this.coinSpawnRemaining = 2.4;
 
     this.skillPickups = scene.physics.add.group({
@@ -214,7 +215,10 @@ export class PowerUpManager {
     if (this.skillSpawnRemaining <= 0) {
       if (this.isSpawnSafe() && this.isPickupEntryClear()) {
         this.spawnSkill();
-        this.skillSpawnRemaining = Phaser.Math.FloatBetween(12, 18);
+        this.skillSpawnRemaining = Phaser.Math.FloatBetween(
+          PICKUP_SPAWN_TIMING.min,
+          PICKUP_SPAWN_TIMING.max,
+        );
       } else {
         this.skillSpawnRemaining = 1;
       }
@@ -512,7 +516,6 @@ export class PowerUpManager {
         label,
       ])
       .setDepth(120)
-      .setScrollFactor(0)
       .setScale(0.18)
       .setAngle(-7)
       .setAlpha(0);
@@ -710,7 +713,10 @@ export class PowerUpManager {
     );
     this.rushGraceRemaining = Math.max(0, state.rushGraceRemaining ?? 0);
     this.invalidCoinRemaining = Math.max(0, state.invalidCoinRemaining ?? 0);
-    this.skillSpawnRemaining = Math.max(0.8, state.skillSpawnRemaining ?? 7);
+    this.skillSpawnRemaining = Math.max(
+      0.8,
+      state.skillSpawnRemaining ?? PICKUP_SPAWN_TIMING.initial,
+    );
     this.coinSpawnRemaining = Math.max(0.5, state.coinSpawnRemaining ?? 2.4);
     this.updateHud();
     this.updatePlayerEffects();

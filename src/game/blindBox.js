@@ -1,9 +1,9 @@
 export const BLIND_BOX_OUTCOMES = Object.freeze([
-  Object.freeze({ id: 'hakimi', probability: 0.5 }),
-  Object.freeze({ id: 'score', probability: 0.2 }),
-  Object.freeze({ id: 'skill', probability: 0.15 }),
-  Object.freeze({ id: 'debt', probability: 0.1 }),
-  Object.freeze({ id: 'nothing', probability: 0.05 }),
+  Object.freeze({ id: 'hakimi', probability: 2 / 3 }),
+  Object.freeze({ id: 'score', probability: 2 / 15 }),
+  Object.freeze({ id: 'skill', probability: 1 / 10 }),
+  Object.freeze({ id: 'debt', probability: 1 / 15 }),
+  Object.freeze({ id: 'nothing', probability: 1 / 30 }),
 ]);
 
 export const HAKIMI_OUTCOME_PROBABILITY =
