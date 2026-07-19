@@ -9,7 +9,7 @@ import {
   updatePickupPresentation,
 } from './gameplayPresentation.js';
 import {
-  HAJIMI_REVEAL_IMPACT,
+  HAJIMI_REVEAL_EFFECTS,
   selectHajimiRevealMotion,
   selectBlindBoxOutcome,
 } from './blindBox.js';
@@ -509,6 +509,7 @@ export class PowerUpManager {
     this.clearHajimiReveal();
     const texture = Phaser.Utils.Array.GetRandom(HAJIMI_ASSETS).key;
     const motion = selectHajimiRevealMotion();
+    const effects = HAJIMI_REVEAL_EFFECTS[motion.tier];
     const centerX = GAMEPLAY.width / 2;
     const centerY = GAMEPLAY.height / 2;
     const shadow = this.scene.add
@@ -520,8 +521,8 @@ export class PowerUpManager {
     const image = this.scene.add
       .image(0, 0, texture)
       .setDisplaySize(
-        HAJIMI_REVEAL_IMPACT.imageSize,
-        HAJIMI_REVEAL_IMPACT.imageSize,
+        effects.imageSize,
+        effects.imageSize,
       );
     const imageMotion = this.scene.add.container(0, 0, [image]);
     imageMotion
@@ -539,19 +540,21 @@ export class PowerUpManager {
         strokeThickness: 6,
       })
       .setOrigin(0.5);
-    label.setScale(2.8).setAlpha(0);
+    label.setScale(effects.labelStartScale).setAlpha(0);
 
     const impactRing = this.scene.add
       .circle(centerX, centerY, 70, 0xffd45f, 0)
       .setStrokeStyle(14, 0xffd45f, 1)
       .setDepth(118)
       .setScale(0.18);
-    const impactRingOuter = this.scene.add
-      .circle(centerX, centerY, 105, 0xff6f61, 0)
-      .setStrokeStyle(8, 0xff6f61, 0.9)
-      .setDepth(117)
-      .setScale(0.12);
-    this.hajimiRevealImpact = [impactRing, impactRingOuter];
+    const impactRingOuter = effects.ringCount > 1
+      ? this.scene.add
+        .circle(centerX, centerY, 105, 0xff6f61, 0)
+        .setStrokeStyle(8, 0xff6f61, 0.9)
+        .setDepth(117)
+        .setScale(0.12)
+      : null;
+    this.hajimiRevealImpact = [impactRing, impactRingOuter].filter(Boolean);
 
     this.hajimiReveal = this.scene.add
       .container(centerX, centerY, [
@@ -567,34 +570,40 @@ export class PowerUpManager {
     this.hajimiRevealMotionId = motion.id;
 
     playHakimiMeow(this.scene, isSoundEnabled());
-    this.scene.cameras.main.flash(
-      HAJIMI_REVEAL_IMPACT.flashDuration,
-      255,
-      225,
-      96,
-      false,
-    );
-    this.scene.cameras.main.shake(
-      HAJIMI_REVEAL_IMPACT.shakeDuration,
-      HAJIMI_REVEAL_IMPACT.shakeIntensity,
-    );
+    if (effects.flashDuration > 0) {
+      this.scene.cameras.main.flash(
+        effects.flashDuration,
+        255,
+        225,
+        96,
+        false,
+      );
+    }
+    if (effects.shakeDuration > 0) {
+      this.scene.cameras.main.shake(
+        effects.shakeDuration,
+        effects.shakeIntensity,
+      );
+    }
     this.scene.tweens.add({
       targets: impactRing,
-      scaleX: HAJIMI_REVEAL_IMPACT.ringScale,
-      scaleY: HAJIMI_REVEAL_IMPACT.ringScale,
+      scaleX: effects.ringScale,
+      scaleY: effects.ringScale,
       alpha: 0,
-      duration: HAJIMI_REVEAL_IMPACT.ringDuration,
+      duration: effects.ringDuration,
       ease: 'Expo.Out',
     });
-    this.scene.tweens.add({
-      targets: impactRingOuter,
-      scaleX: HAJIMI_REVEAL_IMPACT.ringScale * 1.15,
-      scaleY: HAJIMI_REVEAL_IMPACT.ringScale * 1.15,
-      alpha: 0,
-      delay: 55,
-      duration: HAJIMI_REVEAL_IMPACT.ringDuration,
-      ease: 'Expo.Out',
-    });
+    if (impactRingOuter) {
+      this.scene.tweens.add({
+        targets: impactRingOuter,
+        scaleX: effects.ringScale * 1.15,
+        scaleY: effects.ringScale * 1.15,
+        alpha: 0,
+        delay: 55,
+        duration: effects.ringDuration,
+        ease: 'Expo.Out',
+      });
+    }
     this.hajimiRevealLabel = label;
     this.scene.tweens.add({
       targets: label,

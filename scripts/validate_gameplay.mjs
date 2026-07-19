@@ -24,8 +24,9 @@ import {
 import { SNOW_PEAK_RANDOM_LINES } from '../src/game/snowPeakDialogue.js';
 import {
   BLIND_BOX_OUTCOMES,
-  HAJIMI_REVEAL_IMPACT,
+  HAJIMI_REVEAL_EFFECTS,
   HAJIMI_REVEAL_MOTIONS,
+  HAJIMI_REVEAL_TIER_WEIGHTS,
   HAKIMI_OUTCOME_PROBABILITY,
   selectHajimiRevealMotion,
   selectBlindBoxOutcome,
@@ -395,6 +396,16 @@ if (
 const revealMotionIds = new Set(
   HAJIMI_REVEAL_MOTIONS.map((motion) => motion.id),
 );
+const revealTierProbabilityTotal = HAJIMI_REVEAL_TIER_WEIGHTS.reduce(
+  (total, tier) => total + tier.probability,
+  0,
+);
+const revealTierCounts = Object.fromEntries(
+  HAJIMI_REVEAL_TIER_WEIGHTS.map(({ id }) => [
+    id,
+    HAJIMI_REVEAL_MOTIONS.filter((motion) => motion.tier === id).length,
+  ]),
+);
 const hasTranslation = HAJIMI_REVEAL_MOTIONS.some(
   (motion) =>
     Math.abs(motion.start.x - motion.enter.x) >= 300 ||
@@ -429,19 +440,29 @@ const maximumStretch = Math.max(
   ]),
 );
 if (
-  HAJIMI_REVEAL_MOTIONS.length < 7 ||
+  HAJIMI_REVEAL_MOTIONS.length < 13 ||
   revealMotionIds.size !== HAJIMI_REVEAL_MOTIONS.length ||
+  Math.abs(revealTierProbabilityTotal - 1) > Number.EPSILON ||
+  revealTierCounts.gentle < 3 ||
+  revealTierCounts.lively < 3 ||
+  revealTierCounts.explosive < 7 ||
   !hasTranslation ||
   !hasMirrorFlip ||
   !hasNonUniformScale ||
   !hasMultiTurnSpin ||
   maximumTranslation < 900 ||
   maximumStretch < 5 ||
-  HAJIMI_REVEAL_IMPACT.imageSize < 380 ||
-  HAJIMI_REVEAL_IMPACT.shakeIntensity < 0.02 ||
-  HAJIMI_REVEAL_IMPACT.ringScale < 4 ||
-  selectHajimiRevealMotion(0) !== HAJIMI_REVEAL_MOTIONS[0] ||
-  selectHajimiRevealMotion(1) !== HAJIMI_REVEAL_MOTIONS.at(-1)
+  HAJIMI_REVEAL_EFFECTS.gentle.shakeIntensity !== 0 ||
+  HAJIMI_REVEAL_EFFECTS.gentle.flashDuration !== 0 ||
+  HAJIMI_REVEAL_EFFECTS.explosive.imageSize < 380 ||
+  HAJIMI_REVEAL_EFFECTS.explosive.shakeIntensity < 0.02 ||
+  HAJIMI_REVEAL_EFFECTS.explosive.ringScale < 4 ||
+  selectHajimiRevealMotion(0).tier !== 'gentle' ||
+  selectHajimiRevealMotion(0.299999).tier !== 'gentle' ||
+  selectHajimiRevealMotion(0.3).tier !== 'lively' ||
+  selectHajimiRevealMotion(0.599999).tier !== 'lively' ||
+  selectHajimiRevealMotion(0.6).tier !== 'explosive' ||
+  selectHajimiRevealMotion(1).tier !== 'explosive'
 ) {
   failures.push('Hakimi reveal motion library lacks transform variety');
 }
@@ -481,7 +502,7 @@ if (failures.length) {
         hakimiVoiceChecks: 4,
         snowPeakDialogueChecks: 1,
         audioAssetsChecked: 1,
-        blindBoxChecks: 13 + blindBoxBoundaryChecks.length,
+        blindBoxChecks: 22 + blindBoxBoundaryChecks.length,
         pickupSpawnChecks: 2,
         pauseStateChecks: 1,
         hajimiPortraitsChecked: HAJIMI_ASSETS.length,
