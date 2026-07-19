@@ -2,16 +2,11 @@ import Phaser from 'phaser';
 import { COLORS, GAMEPLAY } from './constants.js';
 import { isSoundEnabled, playSound } from './soundEffects.js';
 import {
-  singGenericChinese,
-  speakGenericChinese,
-  stopGenericSpeech,
-} from './speechSynthesis.js';
-import {
-  HAKIMI_CALL,
-  SNOW_PEAK_SONG_SEGMENTS,
   SNOW_PEAK_SUNG_LINE,
   loadSnowPeakAudio,
   playHakimiMeow,
+  playHakimiVoice,
+  stopHakimiVoice,
 } from './snowPeakAudio.js';
 
 const FONT_FAMILY = 'Arial, "Microsoft YaHei", sans-serif';
@@ -358,13 +353,6 @@ export class SnowPeakEvent {
       this.sprite.anims.stop();
       this.sprite.setFrame(SNOW_PEAK.tiredFrame);
       playHakimiMeow(this.scene, isSoundEnabled());
-      if (isSoundEnabled()) {
-        speakGenericChinese(HAKIMI_CALL, {
-          rate: 1.12,
-          pitch: 1.32,
-          volume: 0.62,
-        });
-      }
     });
     this.scene.time.delayedCall(1900, () => {
       if (this.destroyed || this.state !== 'exhausted') {
@@ -469,9 +457,10 @@ export class SnowPeakEvent {
     const isSong = delivery === 'song';
     const didSpeak =
       isSoundEnabled() &&
-      (isSong
-        ? singGenericChinese(SNOW_PEAK_SONG_SEGMENTS)
-        : speakGenericChinese(text));
+      playHakimiVoice(this.scene, text, {
+        delivery,
+        soundEnabled: true,
+      });
     if (isSong) {
       playSound(this.scene, 'snowPeakSong');
     } else if (!didSpeak) {
@@ -484,7 +473,7 @@ export class SnowPeakEvent {
   }
 
   clearBubble() {
-    stopGenericSpeech();
+    stopHakimiVoice(this.scene);
     this.bubbleTimer?.remove(false);
     this.bubbleTimer = null;
     this.bubble?.container.destroy(true);

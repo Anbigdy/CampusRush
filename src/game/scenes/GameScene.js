@@ -21,7 +21,7 @@ import {
   applyNormalPlayerShape,
 } from '../playerSkin.js';
 import { configureLogicalCamera } from '../rendering.js';
-import { stopGenericSpeech } from '../speechSynthesis.js';
+import { stopHakimiVoice } from '../snowPeakAudio.js';
 import { PowerUpManager } from '../powerUps.js';
 import { PlatformRouteManager } from '../platformRoutes.js';
 import { PICKUP_ENTRY_CLEARANCE } from '../pickupPatterns.js';
@@ -1499,7 +1499,7 @@ export class GameScene extends Phaser.Scene {
     if (Phaser.Input.Keyboard.JustDown(this.mKey)) {
       const enabled = toggleSound(this);
       if (!enabled) {
-        stopGenericSpeech();
+        stopHakimiVoice(this);
       }
       syncBackgroundMusic(this, enabled);
       this.updatePlayerStatus();

@@ -55,6 +55,9 @@ Vite build.
   with an explicit redistribution license.
 - Speech synthesis must have a silent/programmatic fallback because browser
   voice availability differs by platform.
+- Snow Peak dialogue uses the licensed CC0 kitten recording as deterministic
+  cat-language chatter. Chinese meaning stays in subtitles; do not reintroduce
+  an operating-system voice or an unlicensed meme recording for this character.
 - Record the source and license for every bundled audio file in
   `public/assets/ART_CREDITS.md`.
 

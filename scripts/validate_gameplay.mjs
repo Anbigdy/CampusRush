@@ -13,14 +13,11 @@ import {
 } from '../src/game/platformSupport.js';
 import { anchorBodyGeometryToFoot } from '../src/game/playerBodyGeometry.js';
 import {
-  singGenericChinese,
-  speakGenericChinese,
-  stopGenericSpeech,
-} from '../src/game/speechSynthesis.js';
-import {
   HAKIMI_AUDIO,
-  SNOW_PEAK_SONG_SEGMENTS,
   SNOW_PEAK_SUNG_LINE,
+  buildHakimiVoiceSequence,
+  playHakimiVoice,
+  stopHakimiVoice,
 } from '../src/game/snowPeakAudio.js';
 
 const failures = [];
@@ -208,85 +205,68 @@ for (const landingCase of landingCases) {
   }
 }
 
-if (speakGenericChinese('fallback check') !== false) {
-  failures.push('speech synthesis did not fail safely without a browser engine');
-}
-if (singGenericChinese(SNOW_PEAK_SONG_SEGMENTS) !== false) {
-  failures.push('song synthesis did not fail safely without a browser engine');
-}
-
-const speechEngineDescriptor = Object.getOwnPropertyDescriptor(
-  globalThis,
-  'speechSynthesis',
-);
-const utteranceDescriptor = Object.getOwnPropertyDescriptor(
-  globalThis,
-  'SpeechSynthesisUtterance',
-);
-const queuedUtterances = [];
-let speechCancelCount = 0;
-class MockUtterance {
-  constructor(text) {
-    this.text = text;
-  }
-}
-Object.defineProperty(globalThis, 'speechSynthesis', {
-  configurable: true,
-  value: {
-    cancel: () => {
-      speechCancelCount += 1;
-    },
-    getVoices: () => [],
-    speak: (utterance) => queuedUtterances.push(utterance),
-  },
+const spokenSequence = buildHakimiVoiceSequence('土木有前景');
+const songSequence = buildHakimiVoiceSequence(SNOW_PEAK_SUNG_LINE, {
+  delivery: 'song',
 });
-Object.defineProperty(globalThis, 'SpeechSynthesisUtterance', {
-  configurable: true,
-  value: MockUtterance,
-});
-try {
-  if (
-    !singGenericChinese(SNOW_PEAK_SONG_SEGMENTS) ||
-    queuedUtterances.length !== SNOW_PEAK_SONG_SEGMENTS.length ||
-    queuedUtterances.some(
-      (utterance, index) =>
-        utterance.text !== SNOW_PEAK_SONG_SEGMENTS[index].text ||
-        utterance.pitch !== SNOW_PEAK_SONG_SEGMENTS[index].pitch ||
-        utterance.rate !== SNOW_PEAK_SONG_SEGMENTS[index].rate,
-    )
-  ) {
-    failures.push('Snow Peak song was not queued with the intended pitch steps');
-  }
-  if (!stopGenericSpeech() || speechCancelCount !== 2) {
-    failures.push('queued Snow Peak song did not stop cleanly');
-  }
-} finally {
-  if (speechEngineDescriptor) {
-    Object.defineProperty(
-      globalThis,
-      'speechSynthesis',
-      speechEngineDescriptor,
-    );
-  } else {
-    delete globalThis.speechSynthesis;
-  }
-  if (utteranceDescriptor) {
-    Object.defineProperty(
-      globalThis,
-      'SpeechSynthesisUtterance',
-      utteranceDescriptor,
-    );
-  } else {
-    delete globalThis.SpeechSynthesisUtterance;
-  }
-}
-
 if (
-  SNOW_PEAK_SONG_SEGMENTS.map((segment) => segment.text)
-    .join('')
-    .replace('，', '') !== SNOW_PEAK_SUNG_LINE.replace('，', '')
+  spokenSequence.length !== 5 ||
+  new Set(spokenSequence.map((syllable) => syllable.rate)).size < 2
 ) {
-  failures.push('Snow Peak song segments do not preserve the displayed line');
+  failures.push('Hakimi speech did not create varied cat-language syllables');
+}
+if (
+  songSequence.length !== 10 ||
+  new Set(songSequence.map((syllable) => syllable.rate)).size < 4 ||
+  songSequence.at(-1).delay >= 2.8
+) {
+  failures.push('Hakimi song did not create the intended pitched sequence');
+}
+
+const scheduledHakimiSources = [];
+const mockHakimiScene = {
+  cache: {
+    audio: {
+      exists: () => true,
+      get: () => ({ duration: 0.604 }),
+    },
+  },
+  sound: {
+    destination: {},
+    context: {
+      currentTime: 1,
+      state: 'running',
+      createBufferSource() {
+        const source = {
+          playbackRate: { setValueAtTime() {} },
+          connect() {},
+          start() {},
+          stop() {
+            this.stopped = true;
+          },
+        };
+        scheduledHakimiSources.push(source);
+        return source;
+      },
+      createGain() {
+        return {
+          gain: {
+            setValueAtTime() {},
+            exponentialRampToValueAtTime() {},
+          },
+          connect() {},
+        };
+      },
+    },
+  },
+};
+if (
+  !playHakimiVoice(mockHakimiScene, '新闻学已死') ||
+  scheduledHakimiSources.length !== 5 ||
+  !stopHakimiVoice(mockHakimiScene) ||
+  scheduledHakimiSources.some((source) => !source.stopped)
+) {
+  failures.push('Hakimi voice did not schedule and stop cleanly');
 }
 
 const hakimiAssetUrl = new URL(
@@ -307,8 +287,7 @@ if (failures.length) {
         obstaclesChecked: obstacles.length,
         supportChecks: 4 + landingCases.length,
         bodyGeometryChecks: 1,
-        speechFallbackChecks: 2,
-        songSequenceChecks: 2,
+        hakimiVoiceChecks: 3,
         audioAssetsChecked: 1,
         failures: 0,
       },
