@@ -6,6 +6,7 @@ import {
   scrollCampusBackdrop,
 } from '../sceneVisuals.js';
 import { PLAYER_SKIN } from '../playerSkin.js';
+import { configureLogicalCamera } from '../rendering.js';
 import { readHighScore } from '../storage.js';
 import {
   isSoundEnabled,
@@ -21,6 +22,7 @@ export class MenuScene extends Phaser.Scene {
   }
 
   create() {
+    configureLogicalCamera(this);
     window.dispatchEvent(
       new CustomEvent('campus-rush:controls-visibility', {
         detail: { visible: false },

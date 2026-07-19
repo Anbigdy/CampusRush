@@ -1,6 +1,10 @@
 import Phaser from 'phaser';
 import { COLORS, GAMEPLAY } from './constants.js';
-import { playSound } from './soundEffects.js';
+import { isSoundEnabled, playSound } from './soundEffects.js';
+import {
+  speakGenericChinese,
+  stopGenericSpeech,
+} from './speechSynthesis.js';
 
 const FONT_FAMILY = 'Arial, "Microsoft YaHei", sans-serif';
 const FRAME_WIDTH = 192;
@@ -433,7 +437,10 @@ export class SnowPeakEvent {
     this.clearBubble();
     this.bubble = makeSpeechBubble(this.scene, text, accentColor);
     this.bubble.enterWithSpeaker = enterWithSpeaker;
-    playSound(this.scene, 'snowPeakTalk');
+    const didSpeak = isSoundEnabled() && speakGenericChinese(text);
+    if (!didSpeak) {
+      playSound(this.scene, 'snowPeakTalk');
+    }
     this.bubbleTimer = this.scene.time.delayedCall(duration, () => {
       this.clearBubble();
     });
@@ -441,6 +448,7 @@ export class SnowPeakEvent {
   }
 
   clearBubble() {
+    stopGenericSpeech();
     this.bubbleTimer?.remove(false);
     this.bubbleTimer = null;
     this.bubble?.container.destroy(true);

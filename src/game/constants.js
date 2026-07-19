@@ -107,7 +107,7 @@ export const OBSTACLES = Object.freeze([
     action: 'either',
     placement: 'air',
     y: 400,
-    body: { width: 30, height: 30, offsetX: 1, offsetY: 3 },
+    body: { width: 30, height: 30, offsetX: 13, offsetY: 3 },
   },
   {
     key: 'obstacle-low-banner',

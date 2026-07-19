@@ -5,6 +5,11 @@ import {
   getSegmentSurfaceY,
   validatePlatformRoutePatterns,
 } from './platformRoutePatterns.js';
+import {
+  canBridgeSurfaceMiss,
+  canFollowSupportedSurface,
+  chooseSurfaceCandidate,
+} from './platformSupport.js';
 import { generateProceduralRoute } from './proceduralRouteGenerator.js';
 
 const ROUTE_START_X = GAMEPLAY.width + 100;
@@ -58,6 +63,7 @@ export class PlatformRouteManager {
     this.supported = false;
     this.supportY = GAMEPLAY.groundY;
     this.supportContact = null;
+    this.supportMissFrames = 0;
     this.lastPlayerFeetY = player.body?.bottom ?? player.y;
 
     const validationErrors = validatePlatformRoutePatterns();
@@ -323,8 +329,9 @@ export class PlatformRouteManager {
     });
   }
 
-  findSurfaceAtPlayer() {
+  findSurfaceAtPlayer(preferredContact = null) {
     const playerX = this.player.x;
+    const playerFeetY = this.getPlayerFeetY();
     const candidates = [];
     this.routes.forEach((route) => {
       const localX = playerX - route.x;
@@ -340,25 +347,39 @@ export class PlatformRouteManager {
       });
     });
 
-    candidates.sort(
-      (a, b) => Math.abs(this.player.y - a.y) - Math.abs(this.player.y - b.y),
+    return chooseSurfaceCandidate(
+      candidates,
+      playerFeetY,
+      preferredContact,
     );
-    return candidates[0] ?? null;
   }
 
   updatePlayerSupport() {
     const wasSupported = this.supported;
     const previousContact = this.supportContact;
-    this.supported = false;
-    this.supportContact = null;
-    const candidate = this.findSurfaceAtPlayer();
-    if (!candidate || !this.player?.active || !this.player.body?.enable) {
-      if (wasSupported && this.player?.body) {
-        this.player.body.allowGravity = true;
-      }
+    if (!this.player?.active || !this.player.body?.enable) {
+      this.forceReleaseSupport();
       return;
     }
 
+    const candidate = this.findSurfaceAtPlayer(previousContact);
+    if (!candidate) {
+      const canBridgeBriefSurfaceMiss = canBridgeSurfaceMiss({
+        wasSupported,
+        velocityY: this.player.body.velocity.y,
+        missFrames: this.supportMissFrames,
+      });
+      if (canBridgeBriefSurfaceMiss) {
+        this.supportMissFrames += 1;
+        this.player.setVelocityY(0);
+        this.player.body.allowGravity = false;
+        return;
+      }
+      this.forceReleaseSupport();
+      return;
+    }
+
+    this.supportMissFrames = 0;
     const surfaceY = candidate.y;
     const currentFeetY = this.getPlayerFeetY();
     const velocityY = this.player.body.velocity.y;
@@ -368,11 +389,15 @@ export class PlatformRouteManager {
       velocityY >= 0 &&
       this.lastPlayerFeetY <= surfaceY + LANDING_TOLERANCE &&
       currentFeetY >= surfaceY - LANDING_TOLERANCE;
-    const followsExistingSurface =
-      wasSupported &&
-      previousContact?.routeId === candidate.route.id &&
-      velocityY >= -1 &&
-      Math.abs(currentFeetY - surfaceY) <= RAMP_STEP_TOLERANCE + 8;
+    const followsExistingSurface = canFollowSupportedSurface({
+      wasSupported,
+      previousContact,
+      candidate,
+      velocityY,
+      currentFeetY,
+      surfaceY,
+      maxDistance: RAMP_STEP_TOLERANCE + 8,
+    });
     const entersRampFromGround =
       groundContact &&
       velocityY >= 0 &&
@@ -381,7 +406,7 @@ export class PlatformRouteManager {
 
     if (!landedFromAbove && !followsExistingSurface && !entersRampFromGround) {
       if (wasSupported) {
-        this.player.body.allowGravity = true;
+        this.forceReleaseSupport();
       }
       return;
     }
@@ -456,6 +481,7 @@ export class PlatformRouteManager {
     this.supported = false;
     this.supportY = GAMEPLAY.groundY;
     this.supportContact = null;
+    this.supportMissFrames = 0;
     if (this.player?.body) {
       this.player.body.allowGravity = true;
     }
