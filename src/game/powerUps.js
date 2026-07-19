@@ -9,7 +9,7 @@ import {
   updatePickupPresentation,
 } from './gameplayPresentation.js';
 import {
-  HAJIMI_REVEAL_ANIMATION,
+  selectHajimiRevealMotion,
   selectBlindBoxOutcome,
 } from './blindBox.js';
 import { HAJIMI_ASSETS } from './hajimiAssets.js';
@@ -507,6 +507,7 @@ export class PowerUpManager {
   showHajimiReveal() {
     this.clearHajimiReveal();
     const texture = Phaser.Utils.Array.GetRandom(HAJIMI_ASSETS).key;
+    const motion = selectHajimiRevealMotion();
     const centerX = GAMEPLAY.width / 2;
     const centerY = GAMEPLAY.height / 2;
     const shadow = this.scene.add
@@ -515,10 +516,13 @@ export class PowerUpManager {
     const panel = this.scene.add
       .rectangle(0, 0, 326, 326, COLORS.cream, 1)
       .setStrokeStyle(7, 0xffd45f, 1);
-    const image = this.scene.add
-      .image(0, 0, texture)
-      .setDisplaySize(300, 300)
-      .setAngle(HAJIMI_REVEAL_ANIMATION.imageStartAngle);
+    const image = this.scene.add.image(0, 0, texture).setDisplaySize(300, 300);
+    const imageMotion = this.scene.add.container(0, 0, [image]);
+    imageMotion
+      .setPosition(motion.start.x, motion.start.y)
+      .setAngle(motion.start.angle)
+      .setScale(motion.start.scaleX, motion.start.scaleY)
+      .setAlpha(motion.start.alpha);
     const label = this.scene.add
       .text(0, 188, '哈基米！', {
         fontFamily: FONT_FAMILY,
@@ -534,49 +538,47 @@ export class PowerUpManager {
       .container(centerX, centerY, [
         shadow,
         panel,
-        image,
+        imageMotion,
         label,
       ])
       .setDepth(120)
-      .setScale(0.08)
-      .setAngle(-18)
+      .setScale(0.12)
       .setAlpha(0);
-    this.hajimiRevealImage = image;
+    this.hajimiRevealImageMotion = imageMotion;
+    this.hajimiRevealMotionId = motion.id;
 
     playHakimiMeow(this.scene, isSoundEnabled());
     this.scene.tweens.add({
-      targets: image,
-      angle: HAJIMI_REVEAL_ANIMATION.imageEnterAngle,
-      duration: HAJIMI_REVEAL_ANIMATION.enterDuration,
-      ease: 'Back.Out',
+      targets: imageMotion,
+      ...motion.enter,
+      duration: motion.enterDuration,
+      ease: motion.enterEase,
     });
     this.scene.tweens.add({
       targets: this.hajimiReveal,
       scaleX: 1,
       scaleY: 1,
-      angle: 8,
       alpha: 1,
-      duration: HAJIMI_REVEAL_ANIMATION.enterDuration,
-      ease: 'Elastic.Out',
+      duration: motion.enterDuration,
+      ease: 'Back.Out',
       onComplete: () => {
         if (!this.hajimiReveal) {
           return;
         }
         this.scene.tweens.add({
-          targets: image,
-          angle: HAJIMI_REVEAL_ANIMATION.imageExitAngle,
-          delay: 620,
-          duration: HAJIMI_REVEAL_ANIMATION.exitDuration,
-          ease: 'Cubic.In',
+          targets: imageMotion,
+          ...motion.exit,
+          delay: motion.holdDuration,
+          duration: motion.exitDuration,
+          ease: motion.exitEase,
         });
         this.scene.tweens.add({
           targets: this.hajimiReveal,
-          scaleX: 1.18,
-          scaleY: 1.18,
-          angle: -10,
+          scaleX: 1.08,
+          scaleY: 1.08,
           alpha: 0,
-          delay: 620,
-          duration: HAJIMI_REVEAL_ANIMATION.exitDuration,
+          delay: motion.holdDuration,
+          duration: motion.exitDuration,
           ease: 'Sine.In',
           onComplete: () => this.clearHajimiReveal(),
         });
@@ -588,13 +590,14 @@ export class PowerUpManager {
     if (!this.hajimiReveal) {
       return;
     }
-    if (this.hajimiRevealImage) {
-      this.scene.tweens.killTweensOf(this.hajimiRevealImage);
+    if (this.hajimiRevealImageMotion) {
+      this.scene.tweens.killTweensOf(this.hajimiRevealImageMotion);
     }
     this.scene.tweens.killTweensOf(this.hajimiReveal);
     this.hajimiReveal.destroy(true);
     this.hajimiReveal = null;
-    this.hajimiRevealImage = null;
+    this.hajimiRevealImageMotion = null;
+    this.hajimiRevealMotionId = null;
   }
 
   showToast(message) {

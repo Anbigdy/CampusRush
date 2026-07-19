@@ -24,8 +24,9 @@ import {
 import { SNOW_PEAK_RANDOM_LINES } from '../src/game/snowPeakDialogue.js';
 import {
   BLIND_BOX_OUTCOMES,
-  HAJIMI_REVEAL_ANIMATION,
+  HAJIMI_REVEAL_MOTIONS,
   HAKIMI_OUTCOME_PROBABILITY,
+  selectHajimiRevealMotion,
   selectBlindBoxOutcome,
 } from '../src/game/blindBox.js';
 import { HAJIMI_ASSETS } from '../src/game/hajimiAssets.js';
@@ -374,14 +375,37 @@ if (
 ) {
   failures.push('blind-box timer is not independently more frequent');
 }
-const revealEntryRotation =
-  HAJIMI_REVEAL_ANIMATION.imageEnterAngle -
-  HAJIMI_REVEAL_ANIMATION.imageStartAngle;
-const revealExitRotation =
-  HAJIMI_REVEAL_ANIMATION.imageExitAngle -
-  HAJIMI_REVEAL_ANIMATION.imageEnterAngle;
-if (revealEntryRotation < 1080 || revealExitRotation < 720) {
-  failures.push('Hakimi reveal rotation is not exaggerated enough');
+const revealMotionIds = new Set(
+  HAJIMI_REVEAL_MOTIONS.map((motion) => motion.id),
+);
+const hasTranslation = HAJIMI_REVEAL_MOTIONS.some(
+  (motion) =>
+    Math.abs(motion.start.x - motion.enter.x) >= 300 ||
+    Math.abs(motion.start.y - motion.enter.y) >= 300,
+);
+const hasMirrorFlip = HAJIMI_REVEAL_MOTIONS.some(
+  (motion) => motion.start.scaleX < 0 || motion.exit.scaleX < 0,
+);
+const hasNonUniformScale = HAJIMI_REVEAL_MOTIONS.some(
+  (motion) =>
+    motion.start.scaleX !== motion.start.scaleY ||
+    motion.exit.scaleX !== motion.exit.scaleY,
+);
+const hasMultiTurnSpin = HAJIMI_REVEAL_MOTIONS.some(
+  (motion) =>
+    Math.abs(motion.enter.angle - motion.start.angle) >= 1080,
+);
+if (
+  HAJIMI_REVEAL_MOTIONS.length < 7 ||
+  revealMotionIds.size !== HAJIMI_REVEAL_MOTIONS.length ||
+  !hasTranslation ||
+  !hasMirrorFlip ||
+  !hasNonUniformScale ||
+  !hasMultiTurnSpin ||
+  selectHajimiRevealMotion(0) !== HAJIMI_REVEAL_MOTIONS[0] ||
+  selectHajimiRevealMotion(1) !== HAJIMI_REVEAL_MOTIONS.at(-1)
+) {
+  failures.push('Hakimi reveal motion library lacks transform variety');
 }
 const blindBoxBoundaryChecks = [
   [0, 'hakimi'],
@@ -419,7 +443,7 @@ if (failures.length) {
         hakimiVoiceChecks: 4,
         snowPeakDialogueChecks: 1,
         audioAssetsChecked: 1,
-        blindBoxChecks: 4 + blindBoxBoundaryChecks.length,
+        blindBoxChecks: 8 + blindBoxBoundaryChecks.length,
         pickupSpawnChecks: 2,
         hajimiPortraitsChecked: HAJIMI_ASSETS.length,
         failures: 0,
