@@ -9,6 +9,7 @@ import {
   canBridgeSurfaceMiss,
   canFollowSupportedSurface,
   chooseSurfaceCandidate,
+  didLandOnSurface,
 } from './platformSupport.js';
 import { generateProceduralRoute } from './proceduralRouteGenerator.js';
 
@@ -17,7 +18,8 @@ const FIRST_ROUTE_DISTANCE = 1180;
 const ROUTE_TRAILING_CLEARANCE = 780;
 const ROUTE_DESTROY_X = -140;
 const RAMP_STEP_TOLERANCE = 20;
-const LANDING_TOLERANCE = 10;
+const LANDING_APPROACH_TOLERANCE = 4;
+const LANDING_CONTACT_EPSILON = 1;
 const BUNDLE_PITY_LIMIT = 3;
 const PLATFORM_THICKNESS = 24;
 
@@ -77,6 +79,7 @@ export class PlatformRouteManager {
     const movement = safeSpeed * deltaSeconds;
 
     this.routes.forEach((route) => {
+      route.previousX = route.x;
       route.x -= movement;
       route.container.setX(route.x);
     });
@@ -157,6 +160,7 @@ export class PlatformRouteManager {
     const route = {
       id: `platform-route-${this.routeSerial += 1}`,
       x: ROUTE_START_X,
+      previousX: ROUTE_START_X,
       pattern,
       container: this.createRouteVisual(pattern),
       entered: false,
@@ -335,13 +339,20 @@ export class PlatformRouteManager {
     const candidates = [];
     this.routes.forEach((route) => {
       const localX = playerX - route.x;
+      const previousLocalX = playerX - (route.previousX ?? route.x);
       route.pattern.segments.forEach((segment, segmentIndex) => {
         if (localX >= segment.x1 - 2 && localX <= segment.x2 + 2) {
+          const wasOverSegment =
+            previousLocalX >= segment.x1 - 2 &&
+            previousLocalX <= segment.x2 + 2;
           candidates.push({
             route,
             segment,
             segmentIndex,
             y: getSegmentSurfaceY(segment, localX),
+            previousY: wasOverSegment
+              ? getSegmentSurfaceY(segment, previousLocalX)
+              : null,
           });
         }
       });
@@ -385,10 +396,15 @@ export class PlatformRouteManager {
     const velocityY = this.player.body.velocity.y;
     const groundContact =
       this.player.body.blocked.down || this.player.body.touching.down;
-    const landedFromAbove =
-      velocityY >= 0 &&
-      this.lastPlayerFeetY <= surfaceY + LANDING_TOLERANCE &&
-      currentFeetY >= surfaceY - LANDING_TOLERANCE;
+    const landedFromAbove = didLandOnSurface({
+      velocityY,
+      lastFeetY: this.lastPlayerFeetY,
+      currentFeetY,
+      previousSurfaceY: candidate.previousY,
+      surfaceY,
+      approachTolerance: LANDING_APPROACH_TOLERANCE,
+      contactEpsilon: LANDING_CONTACT_EPSILON,
+    });
     const followsExistingSurface = canFollowSupportedSurface({
       wasSupported,
       previousContact,

@@ -2,9 +2,17 @@ import Phaser from 'phaser';
 import { COLORS, GAMEPLAY } from './constants.js';
 import { isSoundEnabled, playSound } from './soundEffects.js';
 import {
+  singGenericChinese,
   speakGenericChinese,
   stopGenericSpeech,
 } from './speechSynthesis.js';
+import {
+  HAKIMI_CALL,
+  SNOW_PEAK_SONG_SEGMENTS,
+  SNOW_PEAK_SUNG_LINE,
+  loadSnowPeakAudio,
+  playHakimiMeow,
+} from './snowPeakAudio.js';
 
 const FONT_FAMILY = 'Arial, "Microsoft YaHei", sans-serif';
 const FRAME_WIDTH = 192;
@@ -40,6 +48,7 @@ export function loadSnowPeak(scene) {
       frameHeight: FRAME_HEIGHT,
     },
   );
+  loadSnowPeakAudio(scene);
 }
 
 export function prepareSnowPeak(scene) {
@@ -348,9 +357,24 @@ export class SnowPeakEvent {
       }
       this.sprite.anims.stop();
       this.sprite.setFrame(SNOW_PEAK.tiredFrame);
-      this.showSpeech('张雪峰老师，我还记得你🎵', 2600, 0xb9a5ff);
+      playHakimiMeow(this.scene, isSoundEnabled());
+      if (isSoundEnabled()) {
+        speakGenericChinese(HAKIMI_CALL, {
+          rate: 1.12,
+          pitch: 1.32,
+          volume: 0.62,
+        });
+      }
     });
-    this.scene.time.delayedCall(4200, () => this.becomePickup());
+    this.scene.time.delayedCall(1900, () => {
+      if (this.destroyed || this.state !== 'exhausted') {
+        return;
+      }
+      this.showSpeech(`${SNOW_PEAK_SUNG_LINE}🎵`, 2800, 0xb9a5ff, {
+        delivery: 'song',
+      });
+    });
+    this.scene.time.delayedCall(4900, () => this.becomePickup());
   }
 
   becomePickup() {
@@ -433,12 +457,24 @@ export class SnowPeakEvent {
     });
   }
 
-  showSpeech(text, duration, accentColor, { enterWithSpeaker = false } = {}) {
+  showSpeech(
+    text,
+    duration,
+    accentColor,
+    { enterWithSpeaker = false, delivery = 'speech' } = {},
+  ) {
     this.clearBubble();
     this.bubble = makeSpeechBubble(this.scene, text, accentColor);
     this.bubble.enterWithSpeaker = enterWithSpeaker;
-    const didSpeak = isSoundEnabled() && speakGenericChinese(text);
-    if (!didSpeak) {
+    const isSong = delivery === 'song';
+    const didSpeak =
+      isSoundEnabled() &&
+      (isSong
+        ? singGenericChinese(SNOW_PEAK_SONG_SEGMENTS)
+        : speakGenericChinese(text));
+    if (isSong) {
+      playSound(this.scene, 'snowPeakSong');
+    } else if (!didSpeak) {
       playSound(this.scene, 'snowPeakTalk');
     }
     this.bubbleTimer = this.scene.time.delayedCall(duration, () => {

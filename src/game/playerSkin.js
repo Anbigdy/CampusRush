@@ -69,6 +69,7 @@ function setWorldBodySize(player, worldWidth, worldHeight) {
     (PLAYER_SKIN.frameWidth - sourceWidth) / 2,
     PLAYER_SKIN.frameHeight - sourceHeight,
   );
+  player.body.updateFromGameObject();
 }
 
 export function applyNormalPlayerShape(player) {

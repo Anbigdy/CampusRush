@@ -70,3 +70,20 @@ export function canBridgeSurfaceMiss({
       missFrames < SUPPORT_SURFACE_MISS_GRACE_FRAMES,
   );
 }
+
+export function didLandOnSurface({
+  velocityY,
+  lastFeetY,
+  currentFeetY,
+  previousSurfaceY,
+  surfaceY,
+  approachTolerance,
+  contactEpsilon,
+}) {
+  const comparisonSurfaceY = previousSurfaceY ?? surfaceY;
+  return Boolean(
+    velocityY >= 0 &&
+      lastFeetY <= comparisonSurfaceY + approachTolerance &&
+      currentFeetY >= surfaceY - contactEpsilon,
+  );
+}

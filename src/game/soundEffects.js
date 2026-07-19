@@ -86,6 +86,12 @@ const SOUND_LIBRARY = Object.freeze({
     { frequency: 420, endFrequency: 155, duration: 0.42, type: 'triangle', volume: 0.032 },
     { frequency: 220, endFrequency: 110, duration: 0.34, delay: 0.22, type: 'sine', volume: 0.028 },
   ],
+  snowPeakSong: [
+    { frequency: 392, duration: 0.3, type: 'triangle', volume: 0.023 },
+    { frequency: 494, duration: 0.28, delay: 0.3, type: 'triangle', volume: 0.025 },
+    { frequency: 587, duration: 0.34, delay: 0.58, type: 'sine', volume: 0.027 },
+    { frequency: 523, duration: 0.5, delay: 0.92, type: 'sine', volume: 0.025 },
+  ],
   extraLife: [
     { frequency: 523, duration: 0.09, type: 'sine', volume: 0.034 },
     { frequency: 659, duration: 0.1, delay: 0.08, type: 'triangle', volume: 0.036 },
